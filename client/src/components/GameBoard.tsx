@@ -77,10 +77,10 @@ export const GameBoard: React.FC<Props> = ({
   };
 
   const rollsLabel = rollsLeft === 3
-    ? 'Ваш ход — бросьте кубики!'
+    ? '🎲🎲🎲'
     : rollsLeft === 0
-    ? 'Выберите категорию ↓'
-    : `Брошено · Осталось бросков: ${rollsLeft}`;
+    ? '📋 ↓'
+    : `🎲 ×${rollsLeft}`;
 
   return (
     <div className="board">
@@ -94,21 +94,21 @@ export const GameBoard: React.FC<Props> = ({
           <span className="vs">vs</span>
           <span className="opp-score">{opponent?.totalScore ?? 0} {opponent?.avatar ?? '🤖'}</span>
         </div>
-        <button className="surrender-btn" onClick={handleSurrenderClick}>🏳️ Сдаться</button>
+        <button className="surrender-btn" title="Сдаться" onClick={handleSurrenderClick}>🏳️</button>
       </div>
 
       {confirmSurrender && (
         <div className="surrender-confirm">
-          <span>Сдаться и завершить игру?</span>
-          <button className="surrender-confirm__yes" onClick={handleSurrenderConfirm}>Да</button>
-          <button className="surrender-confirm__no" onClick={handleSurrenderCancel}>Нет</button>
+          <span>🏳️❓</span>
+          <button className="surrender-confirm__yes" onClick={handleSurrenderConfirm}>✔</button>
+          <button className="surrender-confirm__no" onClick={handleSurrenderCancel}>✕</button>
         </div>
       )}
 
       {opponentDisconnected && (
         <div className="alert alert--warn">
-          Противник отключился
-          <button className="leave-btn leave-btn--inline" onClick={onLeave}>Выйти в лобби</button>
+          📡✖
+          <button className="leave-btn leave-btn--inline" onClick={onLeave} title="Выйти в лобби">🚪</button>
         </div>
       )}
       {error && <div className="alert alert--error">{error}</div>}
@@ -138,7 +138,7 @@ export const GameBoard: React.FC<Props> = ({
           </button>
         )}
         {!isMyTurn && (
-          <p className="wait-text">⏳ Ждём хода противника…</p>
+          <p className="wait-text">⏳</p>
         )}
       </div>
 

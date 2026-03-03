@@ -13,41 +13,58 @@
 }
 
 .scorecard th, .scorecard td {
-  padding: 6px 8px;
+  padding: 5px 6px;
   text-align: center;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .cat-header {
-  text-align: left !important;
+  text-align: center !important;
   font-weight: 600;
-  color: rgba(255,255,255,0.6);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+  width: 52px;
 }
 
 .cat-label {
-  text-align: left !important;
-  color: rgba(255,255,255,0.85);
-  font-size: 12px;
-  white-space: nowrap;
+  text-align: center !important;
+  width: 52px;
+  padding: 4px 2px;
 }
 
 .cat-icon {
-  width: 14px;
-  height: 14px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-  vertical-align: middle;
-  margin-right: 5px;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+}
+
+.player-avatar {
+  display: block;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.player-name {
+  display: block;
+  font-size: 15px;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  margin: 0 auto;
 }
 
 .player-header {
   font-weight: 600;
-  min-width: 80px;
-  padding: 8px 4px;
+  min-width: 60px;
+  max-width: 70px;
+  padding: 6px 2px;
   color: rgba(255,255,255,0.6);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .player-header--active {
@@ -105,16 +122,18 @@
 .section-header td {
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.5);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 5px 8px;
+  font-size: 16px;
+  padding: 4px 8px;
+  text-align: center;
 }
 
 .bonus-row td {
   background: rgba(255,255,255,0.03);
-  font-size: 12px;
+  font-size: 11px;
+}
+
+.cell--preview-zero {
+  opacity: 0.45;
 }
 
 .total-row td {

@@ -68,6 +68,14 @@ export function useSocket() {
       });
     });
 
+    socket.on('connect_error', (err) => {
+      setState((s) => ({ ...s, connected: false, error: `Ошибка подключения: ${err.message}` }));
+    });
+
+    socket.on('reconnect_failed', () => {
+      setState((s) => ({ ...s, error: 'Не удалось подключиться к серверу. Перезагрузите страницу.' }));
+    });
+
     socket.on('room_created', ({ code }: { code: string }) => {
       wasInGameRef.current = true;
       setState((s) => ({ ...s, roomCode: code, error: null }));
@@ -92,30 +100,45 @@ export function useSocket() {
 
     socket.on('error', ({ message }: { message: string }) => {
       setState((s) => ({ ...s, error: message }));
-      setTimeout(() => setState((s) => ({ ...s, error: null })), 3000);
+      setTimeout(() => setState((s) => ({ ...s, error: null })), 4000);
+    });
+
+    socket.on('connect_timeout', () => {
+      setState((s) => ({ ...s, error: 'Таймаут подключения. Проверьте интернет.' }));
     });
 
     return () => { socket.disconnect(); };
   }, []);
 
   const createRoom = useCallback((name: string, avatar: string) => {
-    socketRef.current?.emit('create_room', { name, avatar });
+    if (!socketRef.current?.connected) return;
+    const trimmed = name.trim();
+    if (!trimmed || trimmed.length < 2) return;
+    socketRef.current.emit('create_room', { name: trimmed, avatar });
   }, []);
 
   const joinRoom = useCallback((code: string, name: string, avatar: string) => {
-    socketRef.current?.emit('join_room', { code, name, avatar });
+    if (!socketRef.current?.connected) return;
+    const trimmed = name.trim();
+    const trimCode = code.trim().toUpperCase();
+    if (!trimmed || trimmed.length < 2) return;
+    if (trimCode.length !== 5) return;
+    socketRef.current.emit('join_room', { code: trimCode, name: trimmed, avatar });
   }, []);
 
   const rollDice = useCallback(() => {
-    socketRef.current?.emit('roll_dice');
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('roll_dice');
   }, []);
 
   const toggleHold = useCallback((index: number) => {
-    socketRef.current?.emit('toggle_hold', { index });
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('toggle_hold', { index });
   }, []);
 
   const scoreCategory = useCallback((category: ScoreCategory) => {
-    socketRef.current?.emit('score_category', { category });
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('score_category', { category });
   }, []);
 
   const leaveRoom = useCallback(() => {

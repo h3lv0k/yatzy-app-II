@@ -30,7 +30,7 @@ export const Die: React.FC<Props> = ({ value, held, canHold, onToggle, rolling }
         className="die-img"
         draggable={false}
       />
-      {held && <span className="die-label">Держу</span>}
+      {held && <span className="die-label">🔒</span>}
     </button>
   );
 };

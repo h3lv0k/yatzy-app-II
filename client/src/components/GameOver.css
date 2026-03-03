@@ -5,9 +5,35 @@
   justify-content: center;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   padding: 24px;
+  position: relative;
+  overflow: hidden;
 }
 
+/* ── Particles ─────────────────────────────── */
+.particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  top: -60px;
+  animation: fall linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes fall {
+  0%   { transform: translateY(0)      rotate(0deg);           opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110vh)  rotate(var(--rot, 360deg)); opacity: 0; }
+}
+/* ──────────────────────────────────────────── */
+
 .gameover-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 340px;
   background: rgba(255,255,255,0.07);

@@ -1,6 +1,54 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Player } from '../types/game';
 import './GameOver.css';
+
+interface Particle {
+  id: number;
+  emoji: string;
+  x: number;
+  duration: number;
+  delay: number;
+  size: number;
+  rotation: number;
+}
+
+const WIN_EMOJIS  = ['🎆','🎇','✨','🎉','🥳','⭐','💛','🌟'];
+const LOSE_EMOJIS = ['💔','😢','😭','🥀','😔','💧'];
+
+const Particles: React.FC<{ win: boolean }> = ({ win }) => {
+  const emojis = win ? WIN_EMOJIS : LOSE_EMOJIS;
+  const count  = win ? 28 : 20;
+
+  const particles: Particle[] = Array.from({ length: count }, (_, i) => ({
+    id: i,
+    emoji: emojis[i % emojis.length],
+    x: Math.random() * 100,
+    duration: 2.2 + Math.random() * 2.5,
+    delay: Math.random() * 2.5,
+    size: 18 + Math.random() * 22,
+    rotation: Math.random() * 720 - 360,
+  }));
+
+  return (
+    <div className="particles" aria-hidden>
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          className="particle"
+          style={{
+            left: `${p.x}%`,
+            fontSize: `${p.size}px`,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+            '--rot': `${p.rotation}deg`,
+          } as React.CSSProperties}
+        >
+          {p.emoji}
+        </span>
+      ))}
+    </div>
+  );
+};
 
 interface Props {
   winner: string;
@@ -34,8 +82,13 @@ export const GameOver: React.FC<Props> = ({ winner, players, myId, onRematch, on
     resultIcon = '😔';
   }
 
+  const showWin  = iWon || opponentLeft;
+  const showLose = !showWin && !iSurrendered;
+
   return (
     <div className="gameover">
+      {showWin  && <Particles win={true}  />}
+      {showLose && <Particles win={false} />}
       <div className="gameover-card">
         <div className="result-icon">{resultIcon}</div>
         <h2 className="result-title">{resultTitle}</h2>

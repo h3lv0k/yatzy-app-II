@@ -47,6 +47,7 @@ export const Lobby: React.FC<Props> = ({
   const [avatar, setAvatar] = useState('😀');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCategory, setPickerCategory] = useState(0);
+  const [localError, setLocalError] = useState<string | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,12 +67,18 @@ export const Lobby: React.FC<Props> = ({
   }, [defaultName]);
 
   const handleCreate = () => {
-    if (!name.trim()) return;
+    if (!name.trim()) { setLocalError('Введи имя'); return; }
+    if (name.trim().length < 2) { setLocalError('Имя слишком короткое (мин. 2 символа)'); return; }
+    setLocalError(null);
     onCreateRoom(name.trim(), avatar);
   };
 
   const handleJoin = () => {
-    if (!name.trim() || !joinCode.trim()) return;
+    if (!name.trim()) { setLocalError('Введи имя'); return; }
+    if (name.trim().length < 2) { setLocalError('Имя слишком короткое (мин. 2 символа)'); return; }
+    if (joinCode.trim().length !== 5) { setLocalError('Код комнаты должен содержать 5 символов'); return; }
+    if (!/^[A-Z0-9]+$/.test(joinCode.trim())) { setLocalError('Недопустимые символы в коде'); return; }
+    setLocalError(null);
     onJoinRoom(joinCode.trim(), name.trim(), avatar);
   };
 
@@ -193,7 +200,7 @@ export const Lobby: React.FC<Props> = ({
           </div>
         )}
 
-        {error && <div className="error-msg">{error}</div>}
+        {(error || localError) && <div className="error-msg">{localError || error}</div>}
         {!connected && <div className="error-msg">Подключение к серверу…</div>}
       </div>
     </div>

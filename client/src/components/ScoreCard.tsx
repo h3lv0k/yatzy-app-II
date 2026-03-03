@@ -1,11 +1,17 @@
 import React from 'react';
 import {
   Player, ScoreCategory,
-  UPPER_CATEGORIES, LOWER_CATEGORIES, CATEGORY_LABELS,
+  UPPER_CATEGORIES, LOWER_CATEGORIES,
 } from '../types/game';
 import { calculateScore, computeUpperTotal } from '../utils/yatzy';
 import { categoryIcons } from '../assets/icons/categoryIcons';
 import './ScoreCard.css';
+
+const CatIcon: React.FC<{ cat: ScoreCategory }> = ({ cat }) => {
+  const src = categoryIcons[cat];
+  if (!src) return null;
+  return <img src={src} className="cat-icon" alt={cat} />;
+};
 
 interface Props {
   players: Player[];
@@ -41,11 +47,11 @@ export const ScoreCard: React.FC<Props> = ({
       return (
         <td
           key={cat}
-          className="cell cell--preview"
+          className={`cell cell--preview ${preview === 0 ? 'cell--preview-zero' : ''}`}
           onClick={() => onScore(cat)}
-          title={`Записать: ${preview}`}
+          title={String(preview)}
         >
-          <span className="preview-score">{preview}</span>
+          <span className="preview-score">{preview > 0 ? preview : '✕'}</span>
         </td>
       );
     }
@@ -53,55 +59,37 @@ export const ScoreCard: React.FC<Props> = ({
     return <td key={cat} className={`cell cell--empty ${isCurrent ? 'cell--current-turn' : ''}`}>—</td>;
   };
 
-  const renderBonusRow = (player: Player) => {
-    const upper = computeUpperTotal(player.scores);
-    const remaining = Math.max(0, 63 - upper);
-    const hasBonus = player.upperBonus;
-    return (
-      <tr className="bonus-row">
-        <td className="cat-label">Бонус (≥63 → +35)</td>
-        {players.map((p) =>
-          p.id === player.id ? (
-            <td key={p.id} className={`cell ${hasBonus ? 'cell--bonus' : ''}`}>
-              {hasBonus ? '+35' : `ещё ${remaining}`}
-            </td>
-          ) : null
-        )}
-      </tr>
-    );
-  };
-
   return (
     <div className="scorecard">
       <table>
         <thead>
           <tr>
-            <th className="cat-header">Категория</th>
+            <th className="cat-header">🎮</th>
             {players.map((p) => (
               <th
                 key={p.id}
                 className={`player-header ${p.id === currentPlayerId ? 'player-header--active' : ''} ${p.id === myId ? 'player-header--me' : ''}`}
               >
-                {p.avatar} {p.name}
+                <span className="player-avatar">{p.avatar}</span>
+                <span className="player-name">{p.name}</span>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
           <tr className="section-header">
-            <td colSpan={players.length + 1}>Верхняя секция</td>
+            <td colSpan={players.length + 1}>⬆️</td>
           </tr>
           {UPPER_CATEGORIES.map((cat) => (
             <tr key={cat}>
               <td className="cat-label">
-                {categoryIcons[cat] && <img src={categoryIcons[cat]} className="cat-icon" alt="" />}
-                {CATEGORY_LABELS[cat]}
+                <CatIcon cat={cat} />
               </td>
               {players.map((p) => renderCell(p, cat))}
             </tr>
           ))}
           <tr className="bonus-row">
-            <td className="cat-label">Сумма верхней</td>
+            <td className="cat-label"><span className="cat-emoji">Σ</span></td>
             {players.map((p) => (
               <td key={p.id} className="cell">
                 {computeUpperTotal(p.scores)}
@@ -109,29 +97,28 @@ export const ScoreCard: React.FC<Props> = ({
             ))}
           </tr>
           <tr className="bonus-row">
-            <td className="cat-label">Бонус (+35 если ≥63)</td>
+            <td className="cat-label"><span className="cat-emoji">⭐+35</span></td>
             {players.map((p) => (
               <td key={p.id} className={`cell ${p.upperBonus ? 'cell--bonus' : ''}`}>
-                {p.upperBonus ? '+35' : `ещё ${Math.max(0, 63 - computeUpperTotal(p.scores))}`}
+                {p.upperBonus ? '✔' : `ещё ${Math.max(0, 63 - computeUpperTotal(p.scores))}`}
               </td>
             ))}
           </tr>
 
           <tr className="section-header">
-            <td colSpan={players.length + 1}>Нижняя секция</td>
+            <td colSpan={players.length + 1}>⬇️</td>
           </tr>
           {LOWER_CATEGORIES.map((cat) => (
             <tr key={cat}>
               <td className="cat-label">
-                {categoryIcons[cat] && <img src={categoryIcons[cat]} className="cat-icon" alt="" />}
-                {CATEGORY_LABELS[cat]}
+                <CatIcon cat={cat} />
               </td>
               {players.map((p) => renderCell(p, cat))}
             </tr>
           ))}
 
           <tr className="total-row">
-            <td className="cat-label">Итого</td>
+            <td className="cat-label"><span className="cat-emoji">🏆</span></td>
             {players.map((p) => (
               <td key={p.id} className="cell cell--total">{p.totalScore}</td>
             ))}
