@@ -92,7 +92,6 @@ export const GameOver: React.FC<Props> = ({ winner, players, myId, onRematch, on
       <div className="gameover-card">
         <div className="result-icon">{resultIcon}</div>
         <h2 className="result-title">{resultTitle}</h2>
-        {!iWon && !iSurrendered && <p className="winner-name">🏆 {winnerPlayer?.name}</p>}
 
         <div className="scores-final">
           {players.map((p) => (
