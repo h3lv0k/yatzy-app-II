@@ -96,8 +96,11 @@ export const GameOver: React.FC<Props> = ({ winner, players, myId, onRematch, on
 
         <div className="scores-final">
           {players.map((p) => (
-            <div key={p.id} className={`score-row ${p.id === winner ? 'score-row--winner' : ''}`}>
-              <span className="pname">{p.avatar} {p.name}</span>
+            <div key={p.id} className={`score-row ${p.id === winner ? 'score-row--winner' : ''} ${p.id === myId ? 'score-row--me' : ''}`}>
+              <span className="pname">
+                {p.avatar} {p.name}
+                {p.id === winner && <span className="winner-badge">🏆</span>}
+              </span>
               <span className="pscore">{p.totalScore}</span>
             </div>
           ))}

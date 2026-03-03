@@ -89,7 +89,13 @@
 
 .score-row--winner {
   background: rgba(255,215,0,0.12);
-  border: 1px solid rgba(255,215,0,0.25);
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
+.score-row--me {
+  border-left: 3px solid #00cfff;
+  background: rgba(0,207,255,0.07);
+  padding-left: 13px;
 }
 
 .pname {
