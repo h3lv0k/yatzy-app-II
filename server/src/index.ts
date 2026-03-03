@@ -23,6 +23,18 @@ const io = new Server(server, {
 const rooms = new Map<string, Room>();
 // socketId -> roomCode
 const socketRoom = new Map<string, string>();
+// socketId -> last roll timestamp (rate limiting)
+const lastRoll = new Map<string, number>();
+
+// Cleanup stale empty rooms every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, room] of rooms.entries()) {
+    if (room.gameState.players.length === 0) {
+      rooms.delete(code);
+    }
+  }
+}, 10 * 60 * 1000);
 
 function generateCode(): string {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -74,6 +86,14 @@ io.on('connection', (socket: Socket) => {
       socket.emit('error', { message: 'Введите имя игрока' });
       return;
     }
+    if (name.trim().length < 2) {
+      socket.emit('error', { message: 'Имя слишком короткое (мин. 2 символа)' });
+      return;
+    }
+    if (name.trim().length > 20) {
+      socket.emit('error', { message: 'Имя слишком длинное (макс. 20 символов)' });
+      return;
+    }
     // If already in a room — leave it first
     const existingCode = socketRoom.get(socket.id);
     if (existingCode) {
@@ -113,6 +133,14 @@ io.on('connection', (socket: Socket) => {
       socket.emit('error', { message: 'Введите имя игрока' });
       return;
     }
+    if (name.trim().length < 2) {
+      socket.emit('error', { message: 'Имя слишком короткое (мин. 2 символа)' });
+      return;
+    }
+    if (name.trim().length > 20) {
+      socket.emit('error', { message: 'Имя слишком длинное (макс. 20 символов)' });
+      return;
+    }
     const upperCode = code.toUpperCase().trim();
     const room = rooms.get(upperCode);
 
@@ -150,6 +178,15 @@ io.on('connection', (socket: Socket) => {
 
   // Roll dice
   socket.on('roll_dice', () => safeHandler('roll_dice', () => {
+    // Rate limit: max 1 roll per 300ms
+    const now = Date.now();
+    const last = lastRoll.get(socket.id) ?? 0;
+    if (now - last < 300) {
+      socket.emit('error', { message: 'Слишком быстро!' });
+      return;
+    }
+    lastRoll.set(socket.id, now);
+
     const code = socketRoom.get(socket.id);
     if (!code) return;
     const room = rooms.get(code);
@@ -337,6 +374,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('disconnect', () => {
     const code = socketRoom.get(socket.id);
     socketRoom.delete(socket.id);
+    lastRoll.delete(socket.id);
     if (!code) return;
     const room = rooms.get(code);
     if (!room) return;
