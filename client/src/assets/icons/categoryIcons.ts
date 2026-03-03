@@ -9,10 +9,10 @@ import sixesIcon         from './d6.png';
 import threeOfAKindIcon  from './3x.png';
 import fourOfAKindIcon   from './4x.png';
 import yatzyIcon         from './6x.png';
-import smallStraightIcon from './smallStreet.png';
-import largeStraightIcon from './largeStreet.png';
+import smallStraightIcon from './smallstreet.png';
+import largeStraightIcon from './largestreet.png';
 import chanceIcon        from './chance.png';
-import fullHouseIcon     from './fullHouse.png';
+import fullHouseIcon     from './fullhouse.png';
 
 export const categoryIcons: Partial<Record<ScoreCategory, string>> = {
   ones:          onesIcon,
