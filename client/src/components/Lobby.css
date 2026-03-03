@@ -179,26 +179,100 @@
 }
 
 /* Avatar picker */
-.avatar-preview {
-  font-size: 48px;
-  text-align: center;
-  margin-bottom: 8px;
+.avatar-picker {
+  position: relative;
+}
+
+.avatar-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.avatar-trigger:hover {
+  border-color: rgba(255,215,0,0.5);
+  background: rgba(255,215,0,0.08);
+}
+
+.avatar-trigger-emoji {
+  font-size: 32px;
   line-height: 1;
-  filter: drop-shadow(0 0 8px rgba(255,215,0,0.4));
+  filter: drop-shadow(0 0 6px rgba(255,215,0,0.35));
+}
+
+.avatar-trigger-label {
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.avatar-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #1a1f35;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  animation: dropdownIn 0.15s ease;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.avatar-category-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.avatar-cat-tab {
+  flex: 1;
+  font-size: 18px;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.avatar-cat-tab:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.avatar-cat-tab--active {
+  background: rgba(255,215,0,0.2);
 }
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
 .avatar-btn {
-  font-size: 22px;
-  background: rgba(255,255,255,0.08);
+  font-size: 24px;
+  background: rgba(255,255,255,0.06);
   border: 2px solid transparent;
   border-radius: 10px;
-  padding: 6px 0;
+  padding: 7px 0;
   cursor: pointer;
   transition: all 0.15s;
   line-height: 1;
@@ -212,5 +286,5 @@
 .avatar-btn--selected {
   border-color: #ffd700;
   background: rgba(255,215,0,0.2);
-  transform: scale(1.1);
+  transform: scale(1.08);
 }

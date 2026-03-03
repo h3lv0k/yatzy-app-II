@@ -1,10 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Lobby.css';
 
-const AVATARS = [
-  '😀','😎','🤩','🥳','🤖','👻','🐱','🦊','🐸','🐼',
-  '🦁','🐯','🐻','🐺','🦄','🐲','🎃','🍀','⚡','🔥',
-  '🌈','💎','🎯','🏆','🎲','🚀','🎸','🎮','🧩','👾',
+const AVATAR_CATEGORIES = [
+  {
+    label: '😊',
+    title: 'Счастливые',
+    emojis: ['😀','😁','😄','😆','😎','🤩','🥳','😇','🤗','😋','😍','🥰','😂','🤣','😅'],
+  },
+  {
+    label: '😢',
+    title: 'Грустные',
+    emojis: ['😢','😭','😔','😟','😕','🙁','☹️','😞','😩','😫','💔','😿','🥺','😥','😰'],
+  },
+  {
+    label: '😲',
+    title: 'Удивлённые',
+    emojis: ['😮','😯','😲','🤯','😱','🙀','😳','🤫','🤔','😶','😑','🫠','😬','🥴','🤪'],
+  },
+  {
+    label: '🐱',
+    title: 'Животные',
+    emojis: ['🐱','🐶','🐸','🦊','🐼','🦁','🐯','🐻','🐺','🦄','🐲','🐮','🐧','🦋','🐨'],
+  },
+  {
+    label: '🎲',
+    title: 'Символы',
+    emojis: ['🎲','🃏','🏆','🎯','💎','🔥','⚡','🌈','🎸','🚀','👾','🧩','🎮','🎃','🤖'],
+  },
 ];
 
 interface Props {
@@ -23,6 +45,20 @@ export const Lobby: React.FC<Props> = ({
   const [joinCode, setJoinCode] = useState('');
   const [tab, setTab] = useState<'create' | 'join'>('create');
   const [avatar, setAvatar] = useState('😀');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerCategory, setPickerCategory] = useState(0);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [pickerOpen]);
 
   // Sync Telegram name if it arrives after first render
   useEffect(() => {
@@ -60,17 +96,45 @@ export const Lobby: React.FC<Props> = ({
 
         <div className="field">
           <label>Аватар</label>
-          <div className="avatar-preview">{avatar}</div>
-          <div className="avatar-grid">
-            {AVATARS.map((em) => (
-              <button
-                key={em}
-                className={`avatar-btn ${avatar === em ? 'avatar-btn--selected' : ''}`}
-                onClick={() => setAvatar(em)}
-              >
-                {em}
-              </button>
-            ))}
+          <div className="avatar-picker" ref={pickerRef}>
+            <button
+              className="avatar-trigger"
+              onClick={() => setPickerOpen((v) => !v)}
+              type="button"
+            >
+              <span className="avatar-trigger-emoji">{avatar}</span>
+              <span className="avatar-trigger-label">Выбрать {pickerOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {pickerOpen && (
+              <div className="avatar-dropdown">
+                <div className="avatar-category-tabs">
+                  {AVATAR_CATEGORIES.map((cat, i) => (
+                    <button
+                      key={cat.title}
+                      className={`avatar-cat-tab ${pickerCategory === i ? 'avatar-cat-tab--active' : ''}`}
+                      onClick={() => setPickerCategory(i)}
+                      title={cat.title}
+                      type="button"
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="avatar-grid">
+                  {AVATAR_CATEGORIES[pickerCategory].emojis.map((em) => (
+                    <button
+                      key={em}
+                      className={`avatar-btn ${avatar === em ? 'avatar-btn--selected' : ''}`}
+                      onClick={() => { setAvatar(em); setPickerOpen(false); }}
+                      type="button"
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
