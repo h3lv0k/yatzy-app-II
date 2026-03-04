@@ -8,7 +8,7 @@ import fivesIcon         from './d5.png';
 import sixesIcon         from './d6.png';
 import threeOfAKindIcon  from './3x.png';
 import fourOfAKindIcon   from './4x.png';
-import yatzyIcon         from './6x.png';
+import yatzyIcon         from './5x.png';
 import smallStraightIcon from './smallstreet.png';
 import largeStraightIcon from './largestreet.png';
 import chanceIcon        from './chance.png';
