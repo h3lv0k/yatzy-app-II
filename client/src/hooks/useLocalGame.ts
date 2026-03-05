@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState, Player, ScoreCategory, ScoreSheet, UPPER_CATEGORIES, LOWER_CATEGORIES } from '../types/game';
 import { calculateScore, computeUpperTotal } from '../utils/yatzy';
 import { chooseDiceToKeep, chooseBestCategory } from '../bot/botStrategy';
-import { showRewardedAd } from '../services/adService';
 
 // ────────────────────────────────────────────────
 //  Constants
@@ -73,14 +72,8 @@ export interface LocalGameOver {
 export interface LocalGameState {
   gameState: GameState | null;
   gameOver: LocalGameOver | null;
-  /** Can the player watch an ad this turn to get +1 roll? */
+  /** Can the player use the bonus roll this turn? */
   adBonusAvailable: boolean;
-  /** Is the ad currently "playing"? */
-  isWatchingAd: boolean;
-  /** Countdown seconds remaining while ad plays */
-  adCountdown: number;
-  /** True when the next bonus roll is free (first per game); false = requires ad */
-  isNextBonusFree: boolean;
 }
 
 // ────────────────────────────────────────────────
@@ -90,20 +83,15 @@ export interface LocalGameState {
 export function useLocalGame(playerName: string, playerAvatar: string) {
   const [gs, setGs] = useState<GameState | null>(null);
   const [gameOver, setGameOver] = useState<LocalGameOver | null>(null);
-  const [adBonusUsedThisTurn, setAdBonusUsedThisTurn] = useState(false);
-  const [freeBonusUsed, setFreeBonusUsed] = useState(false);
-  const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
+  const [bonusRollUsed, setBonusRollUsed] = useState(false);
   const botTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // adIntervalRef no longer needed — real ad SDK handles its own lifecycle
 
   // ── Derived ──────────────────────────────────
   const currentPlayer = gs?.players[gs.currentPlayerIndex];
   const isBotTurn = currentPlayer?.id === BOT_PLAYER_ID;
   const adBonusAvailable =
     !isBotTurn &&
-    !adBonusUsedThisTurn &&
-    !isWatchingAd &&
+    !bonusRollUsed &&
     !!gs &&
     gs.phase === 'scoring' &&
     gs.rollsLeft === 0;
@@ -145,23 +133,12 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gs?.currentPlayerIndex, gs?.rollsLeft, gs?.phase, isBotTurn]);
 
-  // Reset ad bonus when player's turn starts
-  useEffect(() => {
-    if (gs && !isBotTurn) {
-      setAdBonusUsedThisTurn(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gs?.turn, gs?.currentPlayerIndex]);
-
   // ── Actions ──────────────────────────────────
 
   const start = useCallback(() => {
     setGs(initialState(playerName, playerAvatar));
     setGameOver(null);
-    setAdBonusUsedThisTurn(false);
-    setFreeBonusUsed(false);
-    setIsWatchingAd(false);
-    setAdCountdown(0);
+    setBonusRollUsed(false);
   }, [playerName, playerAvatar]);
 
   const rollDice = useCallback(() => {
@@ -214,10 +191,7 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
   const rematch = useCallback(() => {
     setGs(initialState(playerName, playerAvatar));
     setGameOver(null);
-    setAdBonusUsedThisTurn(false);
-    setFreeBonusUsed(false);
-    setIsWatchingAd(false);
-    setAdCountdown(0);
+    setBonusRollUsed(false);
   }, [playerName, playerAvatar]);
 
   const leaveGame = useCallback(() => {
@@ -225,56 +199,22 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
     setGameOver(null);
   }, []);
 
-  /** Grant 1 bonus roll — free the first time per game, ad-gated afterwards */
-  const watchAdForBonusRoll = useCallback(async () => {
-    if (!adBonusAvailable || isWatchingAd) return;
-
-    const grantRoll = () => {
-      setAdBonusUsedThisTurn(true);
-      setFreeBonusUsed(true);
-      setGs((prev) => {
-        if (!prev) return prev;
-        const state = structuredClone(prev);
-        state.rollsLeft = 1;
-        state.phase = 'rolling';
-        state.heldDice = [true, true, true, true, true];
-        return state;
-      });
-    };
-
-    if (!freeBonusUsed) {
-      // First bonus roll this game — free, instant
-      grantRoll();
-      return;
-    }
-
-    // Subsequent bonus rolls — show real ad
-    setIsWatchingAd(true);
-    setAdCountdown(3); // visual hint while ad loads
-
-    // Tick the countdown for UX (actual reward comes from SDK callback)
-    const countInterval = setInterval(() => {
-      setAdCountdown((c) => (c > 1 ? c - 1 : 0));
-    }, 1000);
-
-    try {
-      const result = await showRewardedAd();
-      clearInterval(countInterval);
-      setIsWatchingAd(false);
-      setAdCountdown(0);
-      if (result.rewarded) {
-        grantRoll();
-      }
-    } catch {
-      // Ad failed / was skipped — no reward
-      clearInterval(countInterval);
-      setIsWatchingAd(false);
-      setAdCountdown(0);
-    }
-  }, [adBonusAvailable, freeBonusUsed, isWatchingAd]);
+  /** Grant 1 free bonus roll (once per game) */
+  const watchAdForBonusRoll = useCallback(() => {
+    if (!adBonusAvailable) return;
+    setBonusRollUsed(true);
+    setGs((prev) => {
+      if (!prev) return prev;
+      const state = structuredClone(prev);
+      state.rollsLeft = 1;
+      state.phase = 'rolling';
+      state.heldDice = [true, true, true, true, true];
+      return state;
+    });
+  }, [adBonusAvailable]);
 
   return {
-    localState: { gameState: gs, gameOver, adBonusAvailable, isWatchingAd, adCountdown, isNextBonusFree: !freeBonusUsed },
+    localState: { gameState: gs, gameOver, adBonusAvailable },
     start,
     rollDice,
     toggleHold,

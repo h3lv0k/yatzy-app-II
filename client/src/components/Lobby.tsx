@@ -222,7 +222,7 @@ export const Lobby: React.FC<Props> = ({
         >
           🤖 Играть против бота
         </button>
-        <p className="bot-hint">Без ожидания · Бонусный бросок за рекламу</p>
+        <p className="bot-hint">Без ожидания · 1 бонусный бросок за игру</p>
       </div>
     </div>
   );

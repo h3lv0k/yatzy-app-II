@@ -17,15 +17,12 @@ interface Props {
   // Bot game extras
   isBotGame?: boolean;
   adBonusAvailable?: boolean;
-  isWatchingAd?: boolean;
-  adCountdown?: number;
-  isNextBonusFree?: boolean;
   onWatchAd?: () => void;
 }
 
 export const GameBoard: React.FC<Props> = ({
   gameState, myId, onRoll, onToggleHold, onScore, onSurrender, onLeave, error, opponentDisconnected,
-  isBotGame = false, adBonusAvailable = false, isWatchingAd = false, adCountdown = 0, isNextBonusFree = true, onWatchAd,
+  isBotGame = false, adBonusAvailable = false, onWatchAd,
 }) => {
   const [confirmSurrender, setConfirmSurrender] = useState(false);
 
@@ -146,16 +143,10 @@ export const GameBoard: React.FC<Props> = ({
           </button>
         )}
 
-        {/* Ad bonus — only in bot game, when player used all rolls */}
-        {isBotGame && isMyTurn && isWatchingAd && (
-          <div className="ad-watching">
-            <div className="ad-spinner" />
-            <span>📺 Реклама… {adCountdown}с</span>
-          </div>
-        )}
-        {isBotGame && isMyTurn && adBonusAvailable && !isWatchingAd && (
-          <button className={`ad-btn ${isNextBonusFree ? 'ad-btn--free' : ''}`} onClick={onWatchAd}>
-            {isNextBonusFree ? '🎁 Бесплатный бросок' : '📺 Смотреть рекламу → +1 бросок'}
+        {/* Bonus roll — once per game */}
+        {isBotGame && isMyTurn && adBonusAvailable && (
+          <button className="ad-btn ad-btn--free" onClick={onWatchAd}>
+            🎁 +1 бросок (1 раз за игру)
           </button>
         )}
 

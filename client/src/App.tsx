@@ -78,7 +78,7 @@ function App() {
 
   // ── Routing: BOT MODE ────────────────────────────────────────────────────
   if (isBotMode) {
-    const { gameState: botGs, gameOver: botGo, adBonusAvailable, isWatchingAd, adCountdown, isNextBonusFree } = localState;
+    const { gameState: botGs, gameOver: botGo, adBonusAvailable } = localState;
 
     if (botGo && botGs) {
       return (
@@ -109,9 +109,6 @@ function App() {
           opponentDisconnected={false}
           isBotGame
           adBonusAvailable={adBonusAvailable}
-          isWatchingAd={isWatchingAd}
-          adCountdown={adCountdown}
-          isNextBonusFree={isNextBonusFree}
           onWatchAd={watchAdForBonusRoll}
         />
       );
