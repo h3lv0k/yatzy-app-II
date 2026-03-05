@@ -14,10 +14,18 @@ interface Props {
   onLeave: () => void;
   error: string | null;
   opponentDisconnected: boolean;
+  // Bot game extras
+  isBotGame?: boolean;
+  adBonusAvailable?: boolean;
+  isWatchingAd?: boolean;
+  adCountdown?: number;
+  isNextBonusFree?: boolean;
+  onWatchAd?: () => void;
 }
 
 export const GameBoard: React.FC<Props> = ({
   gameState, myId, onRoll, onToggleHold, onScore, onSurrender, onLeave, error, opponentDisconnected,
+  isBotGame = false, adBonusAvailable = false, isWatchingAd = false, adCountdown = 0, isNextBonusFree = true, onWatchAd,
 }) => {
   const [confirmSurrender, setConfirmSurrender] = useState(false);
 
@@ -137,6 +145,20 @@ export const GameBoard: React.FC<Props> = ({
             {rollsLeft === 0 ? '🎯 Выберите категорию' : `🎲 Бросить (${rollsLeft} осталось)`}
           </button>
         )}
+
+        {/* Ad bonus — only in bot game, when player used all rolls */}
+        {isBotGame && isMyTurn && isWatchingAd && (
+          <div className="ad-watching">
+            <div className="ad-spinner" />
+            <span>📺 Реклама… {adCountdown}с</span>
+          </div>
+        )}
+        {isBotGame && isMyTurn && adBonusAvailable && !isWatchingAd && (
+          <button className={`ad-btn ${isNextBonusFree ? 'ad-btn--free' : ''}`} onClick={onWatchAd}>
+            {isNextBonusFree ? '🎁 Бесплатный бросок' : '📺 Смотреть рекламу → +1 бросок'}
+          </button>
+        )}
+
         {!isMyTurn && (
           <p className="wait-text">⏳</p>
         )}

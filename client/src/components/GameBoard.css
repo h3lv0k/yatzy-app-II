@@ -178,3 +178,54 @@
 .scorecard-section {
   padding: 0 12px;
 }
+
+/* ── Ad bonus ──────────────────────────────── */
+.ad-btn {
+  padding: 11px 24px;
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: 24px;
+  background: rgba(255,215,0,0.1);
+  color: #ffd700;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+.ad-btn:hover {
+  background: rgba(255,215,0,0.2);
+  border-color: #ffd700;
+  transform: scale(1.03);
+}
+
+/* Free bonus variant — green tint */
+.ad-btn--free {
+  border-color: rgba(80,220,120,0.55);
+  background: rgba(80,220,120,0.1);
+  color: #6eff9e;
+}
+.ad-btn--free:hover {
+  background: rgba(80,220,120,0.2);
+  border-color: #6eff9e;
+}
+
+.ad-watching {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+}
+
+.ad-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #ffd700;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

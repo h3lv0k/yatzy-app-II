@@ -18,6 +18,27 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      ══ Ad containers ══════════════════════════════════════════════════════
+
+      Google IMA SDK (rewarded video).
+      1. Uncomment the <script> below after getting approved in Google Ad Manager.
+      2. Set VITE_AD_PROVIDER=ima and VITE_IMA_AD_TAG_URL=<your tag URL> in .env
+    -->
+    <!-- <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script> -->
+    <div id="ad-container" style="display:none;position:fixed;inset:0;z-index:9999;background:#000;">
+      <video id="ad-video" playsinline style="width:100%;height:100%;"></video>
+    </div>
+
+    <!--
+      Yandex Advertising Network (YAN) — alternative for RU/CIS audience.
+      1. Uncomment the <script> below.
+      2. Set VITE_AD_PROVIDER=yandex and VITE_YANDEX_BLOCK_ID=<ownerId/blockId> in .env
+    -->
+    <!-- <script src="https://yandex.ru/ads/system/context.js" async></script> -->
+    <div id="ya-ad-container" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);"></div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

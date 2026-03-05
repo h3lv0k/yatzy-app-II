@@ -33,13 +33,14 @@ interface Props {
   defaultName: string;
   onCreateRoom: (name: string, avatar: string) => void;
   onJoinRoom: (code: string, name: string, avatar: string) => void;
+  onPlayVsBot: (name: string, avatar: string) => void;
   roomCode: string | null;
   error: string | null;
   connected: boolean;
 }
 
 export const Lobby: React.FC<Props> = ({
-  defaultName, onCreateRoom, onJoinRoom, roomCode, error, connected,
+  defaultName, onCreateRoom, onJoinRoom, onPlayVsBot, roomCode, error, connected,
 }) => {
   const [name, setName] = useState(defaultName);
   const [joinCode, setJoinCode] = useState('');
@@ -80,6 +81,13 @@ export const Lobby: React.FC<Props> = ({
     if (!/^[A-Z0-9]+$/.test(joinCode.trim())) { setLocalError('Недопустимые символы в коде'); return; }
     setLocalError(null);
     onJoinRoom(joinCode.trim(), name.trim(), avatar);
+  };
+
+  const handleVsBot = () => {
+    if (!name.trim()) { setLocalError('Введи имя'); return; }
+    if (name.trim().length < 2) { setLocalError('Имя слишком короткое (мин. 2 символа)'); return; }
+    setLocalError(null);
+    onPlayVsBot(name.trim(), avatar);
   };
 
   return (
@@ -203,6 +211,18 @@ export const Lobby: React.FC<Props> = ({
 
         {(error || localError) && <div className="error-msg">{localError || error}</div>}
         {!connected && <div className="error-msg">Подключение к серверу…</div>}
+      </div>
+
+      <div className="lobby-card lobby-card--bot">
+        <div className="bot-section-label">или</div>
+        <button
+          className="btn btn--bot"
+          onClick={handleVsBot}
+          disabled={!name.trim()}
+        >
+          🤖 Играть против бота
+        </button>
+        <p className="bot-hint">Без ожидания · Бонусный бросок за рекламу</p>
       </div>
     </div>
   );
