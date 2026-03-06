@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { GameState, ScoreCategory } from '../types/game';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://improved-sybilla-h3lv0k-561baea7.koyeb.app';
 
 const INITIAL_STATE: SocketState = {
   connected: false,
