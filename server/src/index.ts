@@ -408,7 +408,7 @@ io.on('connection', (socket: Socket) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Yatzy server running on port ${PORT}`);
+const PORT = parseInt(process.env.PORT || '8000', 10);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Yatzy server running on 0.0.0.0:${PORT}`);
 });
