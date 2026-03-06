@@ -96,7 +96,7 @@ export const Lobby: React.FC<Props> = ({
         <div className="lobby-icon">🎲</div>
         <h1>Yatzy</h1>
         <p className="lobby-subtitle">Multiplayer · Telegram Mini App</p>
-        <span className="lobby-version">v2.0</span>
+        <span className="lobby-version">v3.0</span>
       </div>
 
       <div className="lobby-card">
