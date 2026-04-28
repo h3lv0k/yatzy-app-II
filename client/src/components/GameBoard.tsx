@@ -34,18 +34,17 @@ export const GameBoard: React.FC<Props> = ({
   const isMyTurn = currentPlayer?.id === myId;
   const [rolling, setRolling] = useState(false);
   const [waitingForRoll, setWaitingForRoll] = useState(false);
-  const [prevDice, setPrevDice] = useState<number[]>(dice);
+  const [rollTrigger, setRollTrigger] = useState(0); // Counter to force animation
   const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Detect dice change — for animation
+  // Trigger animation even if dice values stay the same
   useEffect(() => {
-    if (JSON.stringify(dice) !== JSON.stringify(prevDice)) {
+    if (rollTrigger > 0) {
       setRolling(true);
-      setPrevDice(dice);
       const t = setTimeout(() => setRolling(false), 400);
       return () => clearTimeout(t);
     }
-  }, [dice]);
+  }, [rollTrigger, dice]); // Trigger on either index change or dice change
 
   // Clear waitingForRoll when rollsLeft changes (server confirmed the roll)
   const prevRollsLeftRef = useRef(rollsLeft);
@@ -53,6 +52,7 @@ export const GameBoard: React.FC<Props> = ({
     if (rollsLeft !== prevRollsLeftRef.current) {
       prevRollsLeftRef.current = rollsLeft;
       setWaitingForRoll(false);
+      setRollTrigger(prev => prev + 1); // Increment to trigger animation
       if (rollTimeoutRef.current) clearTimeout(rollTimeoutRef.current);
     }
   }, [rollsLeft]);

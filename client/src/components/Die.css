@@ -50,5 +50,9 @@
 }
 
 .die--rolling {
+  animation: dieRoll 0.4s ease-out;
+}
+
+.die--rolling {
   animation: dieRoll 0.4s ease;
 }
