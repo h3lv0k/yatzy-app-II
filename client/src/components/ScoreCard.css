@@ -58,6 +58,17 @@
   margin: 0 auto;
 }
 
+.multiplier-badge {
+  display: inline-block;
+  font-size: 10px;
+  background: #ffd700;
+  color: #1a1a2e;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
 .player-header {
   font-weight: 600;
   min-width: 60px;

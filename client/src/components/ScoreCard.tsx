@@ -43,7 +43,12 @@ export const ScoreCard: React.FC<Props> = ({
     }
 
     if (isMe && canScore) {
-      const preview = calculateScore(cat, dice);
+      let preview = calculateScore(cat, dice);
+      const isLSC = LOWER_CATEGORIES.includes(cat);
+      if (isLSC) {
+        preview = Math.floor(preview * player.lscMultiplier);
+      }
+
       return (
         <td
           key={cat}
@@ -72,6 +77,9 @@ export const ScoreCard: React.FC<Props> = ({
               >
                 <span className="player-avatar">{p.avatar}</span>
                 <span className="player-name">{p.name}</span>
+                {p.lscMultiplier > 1 && (
+                  <span className="multiplier-badge">×{p.lscMultiplier.toFixed(1)}</span>
+                )}
               </th>
             ))}
           </tr>

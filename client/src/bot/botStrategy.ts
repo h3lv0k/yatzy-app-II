@@ -116,6 +116,7 @@ export function chooseDiceToKeep(dice: number[]): boolean[] {
 export function chooseBestCategory(
   dice: number[],
   scores: ScoreSheet,
+  lscMultiplier: number = 1.0,
 ): ScoreCategory {
   const allCategories: ScoreCategory[] = [...UPPER_CATEGORIES, ...LOWER_CATEGORIES];
   const available = allCategories.filter((cat) => scores[cat] === undefined);
@@ -129,6 +130,11 @@ export function chooseBestCategory(
   for (const cat of available) {
     const raw = calculateScore(cat, dice);
     let value = raw;
+
+    const isLSC = LOWER_CATEGORIES.includes(cat);
+    if (isLSC) {
+      value = Math.floor(raw * lscMultiplier);
+    }
 
     // Bonus for upper categories if we still need points for the 35-pt bonus
     if (upperDeficit > 0 && UPPER_CATEGORIES.includes(cat)) {

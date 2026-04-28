@@ -9,6 +9,15 @@ export const SCORE_CATEGORIES: ScoreCategory[] = [
   'smallStraight', 'largeStraight', 'yatzy', 'chance',
 ];
 
+export const UPPER_CATEGORIES: ScoreCategory[] = [
+  'ones', 'twos', 'threes', 'fours', 'fives', 'sixes',
+];
+
+export const LOWER_CATEGORIES: ScoreCategory[] = [
+  'threeOfAKind', 'fourOfAKind', 'fullHouse',
+  'smallStraight', 'largeStraight', 'yatzy', 'chance',
+];
+
 export interface ScoreSheet {
   ones?: number;
   twos?: number;
@@ -32,6 +41,8 @@ export interface Player {
   scores: ScoreSheet;
   totalScore: number;
   upperBonus: boolean;
+  lscStreak: number;
+  lscMultiplier: number;
   sessionId?: string;
   connected?: boolean;
 }

@@ -5,6 +5,7 @@ import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import {
   GameState, Player, Room, ScoreSheet, SCORE_CATEGORIES, ScoreCategory,
+  UPPER_CATEGORIES, LOWER_CATEGORIES,
 } from './types';
 import {
   rollDice, calculateScore, computeTotalScore, computeUpperTotal,
@@ -43,7 +44,11 @@ function generateCode(): string {
 }
 
 function createPlayer(id: string, name: string, avatar: string, sessionId?: string): Player {
-  return { id, name, avatar, scores: {}, totalScore: 0, upperBonus: false, sessionId, connected: true };
+  return {
+    id, name, avatar, scores: {}, totalScore: 0, upperBonus: false,
+    lscStreak: 0, lscMultiplier: 1,
+    sessionId, connected: true
+  };
 }
 
 function initialGameState(roomId: string): GameState {
@@ -278,8 +283,33 @@ io.on('connection', (socket: Socket) => {
     }
 
     // Apply score (0 if using category as scratch)
-    const score = calculateScore(category, gameState.dice);
-    currentPlayer.scores[category] = score;
+    let score = calculateScore(category, gameState.dice);
+    
+    // Yatzy Bonus: if player rolls a Yatzy and already has 50 in Yatzy category
+    const isYatzyRoll = calculateScore('yatzy', gameState.dice) === 50;
+    const hasYatzyBonus = isYatzyRoll && currentPlayer.scores.yatzy === 50;
+
+    const isLSC = LOWER_CATEGORIES.includes(category) && category !== 'chance';
+
+    if (isLSC && (score > 0 || hasYatzyBonus)) {
+      // If it's a Yatzy Bonus, the base score is 100 and multiplier is NOT applied (x1.0)
+      // Otherwise, use calculated score and current multiplier
+      const finalScore = hasYatzyBonus ? 100 : Math.floor(score * currentPlayer.lscMultiplier);
+      currentPlayer.scores[category] = finalScore;
+
+      // Increment streak and update multiplier for NEXT turn
+      currentPlayer.lscStreak += 1;
+      currentPlayer.lscMultiplier = Math.min(2.0, 1 + (currentPlayer.lscStreak * 0.2));
+    } else {
+      // UPPER section, Chance, or zero score in LOWER section
+      // Yatzy Bonus in Upper section is just 100
+      currentPlayer.scores[category] = hasYatzyBonus ? 100 : score;
+
+      // Reset streak and multiplier
+      currentPlayer.lscStreak = 0;
+      currentPlayer.lscMultiplier = 1.0;
+    }
+
     currentPlayer.totalScore = computeTotalScore(currentPlayer.scores);
     currentPlayer.upperBonus = computeUpperTotal(currentPlayer.scores) >= 63;
 
@@ -372,6 +402,8 @@ io.on('connection', (socket: Socket) => {
       p.scores = {} as ScoreSheet;
       p.totalScore = 0;
       p.upperBonus = false;
+      p.lscStreak = 0;
+      p.lscMultiplier = 1.0;
     });
     gameState.currentPlayerIndex = prevFirst === 0 ? 1 : 0;
     gameState.dice = [1, 1, 1, 1, 1];
