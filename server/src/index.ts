@@ -28,9 +28,11 @@ const lastRoll = new Map<string, number>();
 
 // Cleanup stale empty rooms every 10 minutes
 setInterval(() => {
-  const now = Date.now();
   for (const [code, room] of rooms.entries()) {
     if (room.gameState.players.length === 0) {
+      for (const timer of room.disconnectTimers.values()) {
+        clearTimeout(timer);
+      }
       rooms.delete(code);
     }
   }
@@ -40,8 +42,8 @@ function generateCode(): string {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
-function createPlayer(id: string, name: string, avatar: string): Player {
-  return { id, name, avatar, scores: {}, totalScore: 0, upperBonus: false };
+function createPlayer(id: string, name: string, avatar: string, sessionId?: string): Player {
+  return { id, name, avatar, scores: {}, totalScore: 0, upperBonus: false, sessionId, connected: true };
 }
 
 function initialGameState(roomId: string): GameState {
@@ -109,16 +111,23 @@ io.on('connection', (socket: Socket) => {
 
     const code = generateCode();
     const roomId = uuidv4();
-    const player = createPlayer(socket.id, name.trim(), avatar?.trim() || '😀');
+    const sessionId = uuidv4();
+    const player = createPlayer(socket.id, name.trim(), avatar?.trim() || '😀', sessionId);
     const gameState = initialGameState(roomId);
     gameState.players.push(player);
 
-    const room: Room = { id: roomId, code, gameState };
+    const room: Room = { 
+      id: roomId, 
+      code, 
+      gameState,
+      temporarilyDisconnected: new Map(),
+      disconnectTimers: new Map()
+    };
     rooms.set(code, room);
     socketRoom.set(socket.id, code);
     socket.join(code);
 
-    socket.emit('room_created', { code, roomId, playerId: socket.id });
+    socket.emit('room_created', { code, roomId, playerId: socket.id, sessionId });
     socket.emit('game_state', gameState);
     console.log(`Room created: ${code} by ${name}`);
   }));
@@ -161,7 +170,8 @@ io.on('connection', (socket: Socket) => {
       return;
     }
 
-    const player = createPlayer(socket.id, name.trim(), avatar?.trim() || '😎');
+    const sessionId = uuidv4();
+    const player = createPlayer(socket.id, name.trim(), avatar?.trim() || '😎', sessionId);
     room.gameState.players.push(player);
     socketRoom.set(socket.id, upperCode);
     socket.join(upperCode);
@@ -170,6 +180,9 @@ io.on('connection', (socket: Socket) => {
     room.gameState.phase = 'rolling';
     room.gameState.rollsLeft = 3;
     room.gameState.heldDice = [false, false, false, false, false];
+
+    // Inform the joining player
+    socket.emit('joined_room', { code: upperCode, roomId: room.id, playerId: socket.id, sessionId });
 
     io.to(upperCode).emit('game_started', { roomId: room.id });
     io.to(upperCode).emit('game_state', room.gameState);
@@ -302,8 +315,10 @@ io.on('connection', (socket: Socket) => {
     socketRoom.delete(socket.id);
     socket.leave(code);
     if (!room) return;
+    
     room.gameState.players = room.gameState.players.filter((p) => p.id !== socket.id);
     if (room.gameState.players.length === 0) {
+      Array.from(room.disconnectTimers.values()).forEach(clearTimeout);
       rooms.delete(code);
     } else {
       io.to(code).emit('player_disconnected', { id: socket.id });
@@ -342,13 +357,13 @@ io.on('connection', (socket: Socket) => {
     const { gameState } = room;
 
     // Check both players are still connected
-    if (gameState.players.length < 2) {
-      socket.emit('error', { message: 'Противник уже покинул игру' });
+    if (gameState.players.length < 2 || gameState.players.some(p => !p.connected)) {
+      socket.emit('error', { message: 'Противник не в сети или уже покинул игру' });
       return;
     }
     const opponentId = gameState.players.find((p) => p.id !== socket.id)?.id;
     if (!opponentId || !socketRoom.has(opponentId)) {
-      socket.emit('error', { message: 'Противник уже покинул игру' });
+      socket.emit('error', { message: 'Противник не в сети или уже покинул игру' });
       return;
     }
     // Reset scores, keep players, alternate who goes first
@@ -380,30 +395,106 @@ io.on('connection', (socket: Socket) => {
     if (!room) return;
 
     const { gameState } = room;
-    const wasActive = gameState.phase !== 'waiting' && gameState.phase !== 'finished';
-
-    // Remove disconnected player
-    gameState.players = gameState.players.filter((p) => p.id !== socket.id);
-
-    if (gameState.players.length === 0) {
-      rooms.delete(code);
-    } else {
-      // Mark game as finished so remaining player gets a clean state
-      if (wasActive) {
-        gameState.phase = 'finished';
-        gameState.winner = gameState.players[0]?.id;
-        gameState.currentPlayerIndex = 0;
-        io.to(code).emit('game_state', gameState);
-        io.to(code).emit('game_over', {
-          winner: gameState.winner,
-          players: gameState.players,
-          opponentLeft: true,
-        });
+    const player = gameState.players.find((p) => p.id === socket.id);
+    
+    // If game hasn't started yet, just remove them immediately
+    if (gameState.phase === 'waiting') {
+      gameState.players = gameState.players.filter((p) => p.id !== socket.id);
+      if (gameState.players.length === 0) {
+        Array.from(room.disconnectTimers.values()).forEach(clearTimeout);
+        rooms.delete(code);
+      } else {
+        io.to(code).emit('player_disconnected', { id: socket.id });
       }
-      io.to(code).emit('player_disconnected', { id: socket.id });
+      return;
     }
-    console.log(`[-] Disconnected: ${socket.id} from room ${code}`);
+
+    if (!player || !player.sessionId) return;
+    
+    player.connected = false;
+    room.temporarilyDisconnected.set(player.sessionId, { playerId: player.id, timestamp: Date.now() });
+
+    const timeout = setTimeout(() => {
+      // 3 minutes passed, player hasn't returned
+      if (!rooms.has(code)) return;
+      const currentRoom = rooms.get(code)!;
+      currentRoom.temporarilyDisconnected.delete(player.sessionId!);
+      currentRoom.disconnectTimers.delete(player.sessionId!);
+      
+      currentRoom.gameState.players = currentRoom.gameState.players.filter((p) => p.id !== player.id);
+      
+      const wasActive = currentRoom.gameState.phase !== 'finished';
+      if (currentRoom.gameState.players.length === 0) {
+        Array.from(currentRoom.disconnectTimers.values()).forEach(clearTimeout);
+        rooms.delete(code);
+      } else {
+        if (wasActive) {
+          currentRoom.gameState.phase = 'finished';
+          currentRoom.gameState.winner = currentRoom.gameState.players[0]?.id;
+          currentRoom.gameState.currentPlayerIndex = 0;
+          io.to(code).emit('game_state', currentRoom.gameState);
+          io.to(code).emit('game_over', {
+            winner: currentRoom.gameState.winner,
+            players: currentRoom.gameState.players,
+            opponentLeft: true,
+          });
+        }
+        io.to(code).emit('player_disconnected', { id: player.id });
+      }
+    }, 3 * 60 * 1000); // 3 minutes timeout
+
+    room.disconnectTimers.set(player.sessionId, timeout);
+    io.to(code).emit('player_temporarily_disconnected', { 
+      id: player.id, 
+      timeLeft: 3 * 60 * 1000 
+    });
+    io.to(code).emit('game_state', gameState); // update connected status
+
+    console.log(`[-] Temorarily Disconnected (3m timeout): ${socket.id} from room ${code}`);
   });
+
+  // Reconnect a session
+  socket.on('reconnect_session', ({ code, sessionId }: { code: string; sessionId: string }) => safeHandler('reconnect_session', () => {
+    if (!code || !sessionId) return;
+    const upperCode = code.toUpperCase().trim();
+    const room = rooms.get(upperCode);
+    
+    if (!room) {
+      socket.emit('reconnect_failed', { message: 'Комната не найдена или была удалена' });
+      return;
+    }
+
+    if (!room.temporarilyDisconnected.has(sessionId)) {
+      // Maybe player wasn't disconnected or is invalid
+      socket.emit('reconnect_failed', { message: 'Сессия не найдена' });
+      return;
+    }
+
+    // Found! Cancel the timeout
+    const timer = room.disconnectTimers.get(sessionId);
+    if (timer) {
+      clearTimeout(timer);
+      room.disconnectTimers.delete(sessionId);
+    }
+    room.temporarilyDisconnected.delete(sessionId);
+
+    // Rebind the socket
+    const player = room.gameState.players.find((p) => p.sessionId === sessionId);
+    if (player) {
+      player.id = socket.id; // Update player id to new socket id
+      player.connected = true;
+      socketRoom.set(socket.id, upperCode);
+      socket.join(upperCode);
+
+      // We might need to fix `winner` or `currentPlayerIndex` if they relied on socket.id?
+      // currentPlayerIndex is index (0/1), so it's fine. `winner` uses ID, but winner might not be set.
+      
+      socket.emit('reconnected_successfully', { code: upperCode, roomId: room.id, playerId: socket.id, sessionId });
+      io.to(upperCode).emit('player_reconnected', { id: socket.id });
+      io.to(upperCode).emit('game_state', room.gameState);
+      console.log(`[+] Reconnected: ${socket.id} into room ${upperCode}`);
+    }
+  }));
 });
 
 app.get('/health', (_req, res) => res.json({ ok: true }));

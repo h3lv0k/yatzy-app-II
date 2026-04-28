@@ -32,6 +32,8 @@ export interface Player {
   scores: ScoreSheet;
   totalScore: number;
   upperBonus: boolean;
+  sessionId?: string;
+  connected?: boolean;
 }
 
 export interface GameState {
@@ -51,4 +53,7 @@ export interface Room {
   id: string;
   code: string;
   gameState: GameState;
+  temporarilyDisconnected: Map<string, { playerId: string; timestamp: number }>;
+  disconnectTimers: Map<string, NodeJS.Timeout>;
 }
+

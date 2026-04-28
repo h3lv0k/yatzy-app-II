@@ -37,14 +37,14 @@ export const GameBoard: React.FC<Props> = ({
   const [rollTrigger, setRollTrigger] = useState(0); // Counter to force animation
   const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Trigger animation even if dice values stay the same
+  // Trigger animation only when rollTrigger changes (i.e., after actual dice roll)
   useEffect(() => {
     if (rollTrigger > 0) {
       setRolling(true);
       const t = setTimeout(() => setRolling(false), 400);
       return () => clearTimeout(t);
     }
-  }, [rollTrigger, dice]); // Trigger on either index change or dice change
+  }, [rollTrigger]); // Only trigger on rollTrigger change, NOT on dice change
 
   // Clear waitingForRoll when rollsLeft changes (server confirmed the roll)
   const prevRollsLeftRef = useRef(rollsLeft);
