@@ -112,8 +112,8 @@ export const GameBoard: React.FC<Props> = ({
 
       {opponentDisconnected && (
         <div className="alert alert--warn">
-          📡✖
-          <button className="leave-btn leave-btn--inline" onClick={onLeave} title="Выйти в лобби">🚪</button>
+          <span>📡 Противник отключился (до 3 мин)...</span>
+          <button className="leave-btn leave-btn--inline" onClick={onLeave} title="Отменить ожидание">🚪</button>
         </div>
       )}
       {error && <div className="alert alert--error">{error}</div>}

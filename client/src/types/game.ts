@@ -51,6 +51,7 @@ export interface Player {
   scores: ScoreSheet;
   totalScore: number;
   upperBonus: boolean;
+  connected?: boolean;
 }
 
 export interface GameState {

@@ -9,6 +9,7 @@ const INITIAL_STATE: SocketState = {
   gameState: null,
   roomCode: null,
   playerId: null,
+  sessionId: null,
   error: null,
   gameOver: null,
   opponentDisconnected: false,
@@ -19,6 +20,7 @@ export interface SocketState {
   gameState: GameState | null;
   roomCode: string | null;
   playerId: string | null;
+  sessionId: string | null;
   error: string | null;
   gameOver: {
     winner: string;
@@ -45,14 +47,21 @@ export function useSocket() {
 
     socket.on('connect', () => {
       setState((s) => {
-        // Reconnect while in an active session — server lost our socket, reset to lobby
+        // Reconnect while in an active session — try to recover
+        if (wasInGameRef.current && s.roomCode !== null && s.sessionId !== null) {
+          socket.emit('reconnect_session', { code: s.roomCode, sessionId: s.sessionId });
+          // Keep current state while we wait for successful reconnection
+          return { ...s, connected: true, playerId: socket.id ?? null, error: 'Восстановление сессии...' };
+        }
+        
+        // Otherwise, reset to lobby
         if (wasInGameRef.current && (s.gameState !== null || s.roomCode !== null)) {
           wasInGameRef.current = false;
           return {
             ...INITIAL_STATE,
             connected: true,
             playerId: socket.id ?? null,
-            error: 'Соединение прервалось. Начните новую игру.',
+            error: 'Сессия не найдена. Начните новую игру.',
           };
         }
         return { ...s, connected: true, playerId: socket.id ?? null };
@@ -72,13 +81,37 @@ export function useSocket() {
       setState((s) => ({ ...s, connected: false, error: `Ошибка подключения: ${err.message}` }));
     });
 
-    socket.on('reconnect_failed', () => {
-      setState((s) => ({ ...s, error: 'Не удалось подключиться к серверу. Перезагрузите страницу.' }));
+    socket.on('reconnect_failed', (data?: { message?: string }) => {
+      wasInGameRef.current = false;
+      setState((s) => ({
+        ...INITIAL_STATE,
+        connected: socket.connected,
+        playerId: socket.id ?? null,
+        error: data?.message || 'Не удалось восстановить сессию. Перезагрузите страницу.',
+      }));
     });
 
-    socket.on('room_created', ({ code }: { code: string }) => {
+    socket.on('reconnected_successfully', ({ code, sessionId }: { code: string; sessionId: string }) => {
       wasInGameRef.current = true;
-      setState((s) => ({ ...s, roomCode: code, error: null }));
+      setState((s) => ({ ...s, roomCode: code, sessionId, error: null, opponentDisconnected: false }));
+    });
+
+    socket.on('player_reconnected', () => {
+      setState((s) => ({ ...s, opponentDisconnected: false }));
+    });
+
+    socket.on('player_temporarily_disconnected', () => {
+      setState((s) => ({ ...s, opponentDisconnected: true }));
+    });
+
+    socket.on('room_created', ({ code, sessionId }: { code: string; sessionId?: string }) => {
+      wasInGameRef.current = true;
+      setState((s) => ({ ...s, roomCode: code, sessionId: sessionId ?? null, error: null }));
+    });
+
+    socket.on('joined_room', ({ code, sessionId }: { code: string; sessionId?: string }) => {
+      wasInGameRef.current = true;
+      setState((s) => ({ ...s, roomCode: code, sessionId: sessionId ?? null, error: null }));
     });
 
     socket.on('game_started', () => {
