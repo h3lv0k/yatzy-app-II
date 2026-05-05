@@ -13,14 +13,15 @@ interface Props {
   canHold: boolean;
   onToggle: () => void;
   rolling?: boolean;
+  isYatzy?: boolean;
 }
 
 const DICE_IMAGES: Record<number, string> = { 1: d1, 2: d2, 3: d3, 4: d4, 5: d5, 6: d6 };
 
-export const Die: React.FC<Props> = ({ value, held, canHold, onToggle, rolling }) => {
+export const Die: React.FC<Props> = ({ value, held, canHold, onToggle, rolling, isYatzy }) => {
   return (
     <button
-      className={`die ${held ? 'die--held' : ''} ${!canHold ? 'die--disabled' : ''} ${rolling ? 'die--rolling' : ''}`}
+      className={`die ${held ? 'die--held' : ''} ${!canHold ? 'die--disabled' : ''} ${rolling ? 'die--rolling' : ''} ${isYatzy ? 'die--yatzy-glow' : ''}`}
       onClick={canHold ? onToggle : undefined}
       aria-label={`Кубик ${value}${held ? ' (зафиксирован)' : ''}`}
     >

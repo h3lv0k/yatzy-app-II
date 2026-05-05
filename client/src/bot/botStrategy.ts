@@ -131,7 +131,7 @@ export function chooseBestCategory(
     const raw = calculateScore(cat, dice);
     let value = raw;
 
-    const isLSC = LOWER_CATEGORIES.includes(cat);
+    const isLSC = LOWER_CATEGORIES.includes(cat) && cat !== 'chance';
     if (isLSC) {
       value = Math.floor(raw * lscMultiplier);
     }

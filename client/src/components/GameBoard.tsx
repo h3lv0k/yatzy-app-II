@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GameState, ScoreCategory } from '../types/game';
 import { Die } from './Die';
 import { ScoreCard } from './ScoreCard';
+import { YatzyOverlay } from './YatzyOverlay';
+import { DebugPanel } from './DebugPanel';
 import './GameBoard.css';
 
 interface Props {
@@ -18,11 +20,24 @@ interface Props {
   isBotGame?: boolean;
   adBonusAvailable?: boolean;
   onWatchAd?: () => void;
+  // Debug mode
+  isDebugMode?: boolean;
+  debugUndo?: () => void;
+  debugSetDice?: (dice: number[]) => void;
+  debugForceFinish?: (win: boolean) => void;
+  debugSetUpperScore?: (score: number) => void;
+  debugFillScores?: () => void;
+  historyCount?: number;
+  lscMultiplier?: number;
+  lscStreak?: number;
 }
 
 export const GameBoard: React.FC<Props> = ({
   gameState, myId, onRoll, onToggleHold, onScore, onSurrender, onLeave, error, opponentDisconnected,
   isBotGame = false, adBonusAvailable = false, onWatchAd,
+  isDebugMode = false, debugUndo, debugSetDice, debugForceFinish, 
+  debugSetUpperScore, debugFillScores,
+  historyCount = 0, lscMultiplier = 1, lscStreak = 0
 }) => {
   const [confirmSurrender, setConfirmSurrender] = useState(false);
 
@@ -33,6 +48,10 @@ export const GameBoard: React.FC<Props> = ({
   const currentPlayer = players[currentPlayerIndex];
   const isMyTurn = currentPlayer?.id === myId;
   const [rolling, setRolling] = useState(false);
+  
+  // Detect if current dice is a Yatzy
+  const isYatzy = dice.every(d => d === dice[0]) && rollsLeft < 3;
+
   const [waitingForRoll, setWaitingForRoll] = useState(false);
   const [rollTrigger, setRollTrigger] = useState(0); // Counter to force animation
   const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,6 +108,7 @@ export const GameBoard: React.FC<Props> = ({
 
   return (
     <div className="board">
+      <YatzyOverlay show={isYatzy} />
       {/* Header */}
       <div className="board-header">
         <div className={`turn-indicator ${isMyTurn ? 'turn-indicator--mine' : 'turn-indicator--theirs'}`}>
@@ -130,6 +150,7 @@ export const GameBoard: React.FC<Props> = ({
               rolling={rolling && !heldDice[i]}
               canHold={isMyTurn && rollsLeft < 3 && rollsLeft > 0}
               onToggle={() => onToggleHold(i)}
+              isYatzy={isYatzy}
             />
           ))}
         </div>
@@ -167,6 +188,20 @@ export const GameBoard: React.FC<Props> = ({
           onScore={onScore}
         />
       </div>
+
+      {isDebugMode && debugUndo && debugSetDice && debugForceFinish && (
+        <DebugPanel
+          dice={dice}
+          historyCount={historyCount}
+          onSetDice={debugSetDice}
+          onUndo={debugUndo}
+          onForceFinish={debugForceFinish}
+          onSetUpperScore={debugSetUpperScore}
+          onFillScores={debugFillScores}
+          lscMultiplier={lscMultiplier}
+          lscStreak={lscStreak}
+        />
+      )}
     </div>
   );
 };

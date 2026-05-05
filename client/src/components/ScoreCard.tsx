@@ -44,7 +44,7 @@ export const ScoreCard: React.FC<Props> = ({
 
     if (isMe && canScore) {
       let preview = calculateScore(cat, dice);
-      const isLSC = LOWER_CATEGORIES.includes(cat);
+      const isLSC = LOWER_CATEGORIES.includes(cat) && cat !== 'chance';
       if (isLSC) {
         preview = Math.floor(preview * player.lscMultiplier);
       }

@@ -1,0 +1,137 @@
+.debug-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.debug-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 280px;
+  background: #222;
+  color: #eee;
+  border-radius: 12px;
+  padding: 15px;
+  z-index: 1001;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-family: sans-serif;
+  border: 1px solid #444;
+}
+
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  font-weight: bold;
+}
+
+.debug-info {
+  font-size: 11px;
+  background: #333;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  color: #00ff00;
+  display: inline-block;
+}
+
+.debug-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.debug-section {
+  margin-bottom: 15px;
+}
+
+.debug-section label {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.debug-dice-inputs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.debug-dice-inputs select {
+  flex: 1;
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 5px;
+}
+
+.debug-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #444;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 5px;
+  transition: background 0.2s;
+}
+
+.debug-btn:hover:not(:disabled) {
+  background: #555;
+}
+
+.debug-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.debug-btn--primary {
+  background: #007bff;
+}
+
+.debug-btn--primary:hover {
+  background: #0069d9;
+}
+
+.debug-btn--win {
+  background: #28a745;
+}
+
+.debug-btn--lose {
+  background: #dc3545;
+}
+
+.debug-actions--row {
+  display: flex;
+  gap: 10px;
+}
+
+.debug-footer {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  margin-top: 10px;
+}

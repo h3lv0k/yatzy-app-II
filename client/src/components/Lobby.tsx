@@ -33,7 +33,7 @@ interface Props {
   defaultName: string;
   onCreateRoom: (name: string, avatar: string) => void;
   onJoinRoom: (code: string, name: string, avatar: string) => void;
-  onPlayVsBot: (name: string, avatar: string) => void;
+  onPlayVsBot: (name: string, avatar: string, debug?: boolean) => void;
   roomCode: string | null;
   error: string | null;
   connected: boolean;
@@ -77,10 +77,18 @@ export const Lobby: React.FC<Props> = ({
   const handleJoin = () => {
     if (!name.trim()) { setLocalError('Введи имя'); return; }
     if (name.trim().length < 2) { setLocalError('Имя слишком короткое (мин. 2 символа)'); return; }
-    if (joinCode.trim().length !== 5) { setLocalError('Код комнаты должен содержать 5 символов'); return; }
-    if (!/^[A-Z0-9]+$/.test(joinCode.trim())) { setLocalError('Недопустимые символы в коде'); return; }
+    
+    const code = joinCode.trim().toUpperCase();
+    if (code === 'DEBUG') {
+      setLocalError(null);
+      onPlayVsBot(name.trim(), avatar, true);
+      return;
+    }
+
+    if (code.length !== 5) { setLocalError('Код комнаты должен содержать 5 символов'); return; }
+    if (!/^[A-Z0-9]+$/.test(code)) { setLocalError('Недопустимые символы в коде'); return; }
     setLocalError(null);
-    onJoinRoom(joinCode.trim(), name.trim(), avatar);
+    onJoinRoom(code, name.trim(), avatar);
   };
 
   const handleVsBot = () => {

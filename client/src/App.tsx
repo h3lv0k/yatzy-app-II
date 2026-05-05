@@ -15,10 +15,13 @@ function App() {
   // ── Bot game state ──────────────────────────────────────────────────────
   const [botPlayerName, setBotPlayerName] = useState('');
   const [botPlayerAvatar, setBotPlayerAvatar] = useState('😀');
+  const [isDebugMode, setIsDebugMode] = useState(false);
+
   const {
     localState, start: startBotGame, rollDice: botRoll, toggleHold: botToggleHold,
     scoreCategory: botScore, surrender: botSurrender, rematch: botRematch,
     leaveGame: botLeave, watchAdForBonusRoll,
+    debugUndo, debugSetDice, debugForceFinish, debugSetUpperScore, debugFillScores,
   } = useLocalGame(botPlayerName, botPlayerAvatar);
   const [isBotMode, setIsBotMode] = useState(false);
 
@@ -41,9 +44,10 @@ function App() {
   };
 
   // ── Bot game handlers ────────────────────────────────────────────────────
-  const handlePlayVsBot = (name: string, avatar: string) => {
+  const handlePlayVsBot = (name: string, avatar: string, debug = false) => {
     setBotPlayerName(name);
     setBotPlayerAvatar(avatar);
+    setIsDebugMode(debug);
     setIsBotMode(true);
   };
 
@@ -72,13 +76,14 @@ function App() {
 
   const handleBotLeave = () => {
     setIsBotMode(false);
+    setIsDebugMode(false);
     setBotPlayerName('');
     botLeave();
   };
 
   // ── Routing: BOT MODE ────────────────────────────────────────────────────
   if (isBotMode) {
-    const { gameState: botGs, gameOver: botGo, adBonusAvailable } = localState;
+    const { gameState: botGs, gameOver: botGo, adBonusAvailable, historyCount, lscMultiplier, lscStreak } = localState;
 
     if (botGo && botGs) {
       return (
@@ -110,6 +115,15 @@ function App() {
           isBotGame
           adBonusAvailable={adBonusAvailable}
           onWatchAd={watchAdForBonusRoll}
+          isDebugMode={isDebugMode}
+          debugUndo={debugUndo}
+          debugSetDice={debugSetDice}
+          debugForceFinish={debugForceFinish}
+          debugSetUpperScore={debugSetUpperScore}
+          debugFillScores={debugFillScores}
+          historyCount={historyCount}
+          lscMultiplier={lscMultiplier}
+          lscStreak={lscStreak}
         />
       );
     }

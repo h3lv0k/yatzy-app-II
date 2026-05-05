@@ -85,9 +85,14 @@ export interface LocalGameState {
 
 export function useLocalGame(playerName: string, playerAvatar: string) {
   const [gs, setGs] = useState<GameState | null>(null);
+  const [history, setHistory] = useState<GameState[]>([]);
   const [gameOver, setGameOver] = useState<LocalGameOver | null>(null);
   const [bonusRollUsed, setBonusRollUsed] = useState(false);
   const botTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pushHistory = useCallback((state: GameState) => {
+    setHistory((prev) => [...prev, structuredClone(state)]);
+  }, []);
 
   // ── Derived ──────────────────────────────────
   const currentPlayer = gs?.players[gs.currentPlayerIndex];
@@ -139,7 +144,9 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
   // ── Actions ──────────────────────────────────
 
   const start = useCallback(() => {
-    setGs(initialState(playerName, playerAvatar));
+    const state = initialState(playerName, playerAvatar);
+    setGs(state);
+    setHistory([]);
     setGameOver(null);
     setBonusRollUsed(false);
   }, [playerName, playerAvatar]);
@@ -149,13 +156,14 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
       if (!prev) return prev;
       if (prev.phase !== 'rolling') return prev;
       if (prev.rollsLeft <= 0) return prev;
+      pushHistory(prev);
       const state = structuredClone(prev);
       state.dice = rollDiceArr(state.dice, state.heldDice);
       state.rollsLeft -= 1;
       if (state.rollsLeft === 0) state.phase = 'scoring';
       return state;
     });
-  }, []);
+  }, [pushHistory]);
 
   const toggleHold = useCallback((index: number) => {
     setGs((prev) => {
@@ -174,10 +182,11 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
       if (player.id !== LOCAL_PLAYER_ID) return prev;
       if (prev.rollsLeft === 3) return prev;
       if (player.scores[category] !== undefined) return prev;
+      pushHistory(prev);
       const state = structuredClone(prev);
       return applyScore(state, LOCAL_PLAYER_ID, category, setGameOver);
     });
-  }, []);
+  }, [pushHistory]);
 
   const surrender = useCallback(() => {
     setGs((prev) => {
@@ -192,13 +201,16 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
   }, []);
 
   const rematch = useCallback(() => {
-    setGs(initialState(playerName, playerAvatar));
+    const state = initialState(playerName, playerAvatar);
+    setGs(state);
+    setHistory([]);
     setGameOver(null);
     setBonusRollUsed(false);
   }, [playerName, playerAvatar]);
 
   const leaveGame = useCallback(() => {
     setGs(null);
+    setHistory([]);
     setGameOver(null);
   }, []);
 
@@ -208,16 +220,96 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
     setBonusRollUsed(true);
     setGs((prev) => {
       if (!prev) return prev;
+      pushHistory(prev);
       const state = structuredClone(prev);
       state.rollsLeft = 1;
       state.phase = 'rolling';
       state.heldDice = [true, true, true, true, true];
       return state;
     });
-  }, [adBonusAvailable]);
+  }, [adBonusAvailable, pushHistory]);
+
+  // ── Debug Tools ──────────────────────────────
+  const debugUndo = useCallback(() => {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const newHistory = [...prev];
+      const lastState = newHistory.pop()!;
+      setGs(lastState);
+      setGameOver(null);
+      return newHistory;
+    });
+  }, []);
+
+  const debugSetDice = useCallback((newDice: number[]) => {
+    setGs((prev) => {
+      if (!prev) return prev;
+      pushHistory(prev);
+      const state = structuredClone(prev);
+      state.dice = [...newDice];
+      return state;
+    });
+  }, [pushHistory]);
+
+  const debugForceFinish = useCallback((win: boolean) => {
+    setGs((prev) => {
+      if (!prev) return prev;
+      pushHistory(prev);
+      const state = structuredClone(prev);
+      state.phase = 'finished';
+      const winnerId = win ? LOCAL_PLAYER_ID : BOT_PLAYER_ID;
+      state.winner = winnerId;
+      setGameOver({ winner: winnerId, players: state.players });
+      return state;
+    });
+  }, [pushHistory]);
+
+  const debugSetUpperScore = useCallback((score: number) => {
+    setGs((prev) => {
+      if (!prev) return prev;
+      pushHistory(prev);
+      const state = structuredClone(prev);
+      const player = state.players[state.currentPlayerIndex];
+      // Distribute score across upper categories
+      player.scores.ones = score;
+      player.scores.twos = 0;
+      player.scores.threes = 0;
+      player.scores.fours = 0;
+      player.scores.fives = 0;
+      player.scores.sixes = 0;
+      player.totalScore = computeTotal(player.scores);
+      player.upperBonus = computeUpperTotal(player.scores) >= 63;
+      return state;
+    });
+  }, [pushHistory]);
+
+  const debugFillScores = useCallback(() => {
+    setGs((prev) => {
+      if (!prev) return prev;
+      pushHistory(prev);
+      const state = structuredClone(prev);
+      state.players.forEach(player => {
+        ALL_CATEGORIES.forEach(cat => {
+          if (player.scores[cat] === undefined) {
+            player.scores[cat] = Math.floor(Math.random() * 20);
+          }
+        });
+        player.totalScore = computeTotal(player.scores);
+        player.upperBonus = computeUpperTotal(player.scores) >= 63;
+      });
+      return state;
+    });
+  }, [pushHistory]);
 
   return {
-    localState: { gameState: gs, gameOver, adBonusAvailable },
+    localState: { 
+      gameState: gs, 
+      gameOver, 
+      adBonusAvailable, 
+      historyCount: history.length,
+      lscMultiplier: currentPlayer?.lscMultiplier ?? 1,
+      lscStreak: currentPlayer?.lscStreak ?? 0
+    },
     start,
     rollDice,
     toggleHold,
@@ -226,6 +318,11 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
     rematch,
     leaveGame,
     watchAdForBonusRoll,
+    debugUndo,
+    debugSetDice,
+    debugForceFinish,
+    debugSetUpperScore,
+    debugFillScores,
   };
 }
 
