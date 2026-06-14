@@ -4,6 +4,7 @@ import { Die } from './Die';
 import { ScoreCard } from './ScoreCard';
 import { YatzyOverlay } from './YatzyOverlay';
 import { DebugPanel } from './DebugPanel';
+import { isYatzyRoll } from '../utils/yatzy';
 import './GameBoard.css';
 
 interface Props {
@@ -50,7 +51,7 @@ export const GameBoard: React.FC<Props> = ({
   const [rolling, setRolling] = useState(false);
   
   // Detect if current dice is a Yatzy
-  const isYatzy = dice.every(d => d === dice[0]) && rollsLeft < 3;
+  const isYatzy = isYatzyRoll(dice) && rollsLeft < 3;
 
   const [waitingForRoll, setWaitingForRoll] = useState(false);
   const [rollTrigger, setRollTrigger] = useState(0); // Counter to force animation

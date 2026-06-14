@@ -3,7 +3,7 @@ import {
   Player, ScoreCategory,
   UPPER_CATEGORIES, LOWER_CATEGORIES,
 } from '../types/game';
-import { calculateScore, computeUpperTotal } from '../utils/yatzy';
+import { calculateScore, computeUpperTotal, isYatzyRoll } from '../utils/yatzy';
 import { categoryIcons } from '../assets/icons/categoryIcons';
 import './ScoreCard.css';
 
@@ -44,15 +44,27 @@ export const ScoreCard: React.FC<Props> = ({
 
     if (isMe && canScore) {
       let preview = calculateScore(cat, dice);
+      
+      const isYatzyRollCurrent = isYatzyRoll(dice);
+      const hasYatzyBonus = isYatzyRollCurrent && player.scores.yatzy === 50;
+
+      // Bonus is only for matching Upper category or sum-based Lower categories
+      const isMatchingUpper = UPPER_CATEGORIES.includes(cat) && calculateScore(cat, dice) > 0;
+      const isSumBasedLower = ['threeOfAKind', 'fourOfAKind', 'chance'].includes(cat);
+      const isEligibleForBonus = isSumBasedLower || isMatchingUpper;
+      const apply100Bonus = hasYatzyBonus && isEligibleForBonus;
+
       const isLSC = LOWER_CATEGORIES.includes(cat) && cat !== 'chance';
-      if (isLSC) {
+      if (apply100Bonus) {
+        preview = 100;
+      } else if (isLSC) {
         preview = Math.floor(preview * player.lscMultiplier);
       }
 
       return (
         <td
           key={cat}
-          className={`cell cell--preview ${preview === 0 ? 'cell--preview-zero' : ''}`}
+          className={`cell cell--preview ${preview === 0 ? 'cell--preview-zero' : ''} ${apply100Bonus ? 'cell--preview-bonus' : ''}`}
           onClick={() => onScore(cat)}
           title={String(preview)}
         >

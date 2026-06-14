@@ -1,0 +1,170 @@
+.surprise-room {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeInSurprise 1s ease-out forwards;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+}
+
+@keyframes fadeInSurprise {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.surprise-content {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Cake Styles */
+.cake-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.cake-wrapper {
+  position: relative;
+  width: 280px;
+  height: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.cake-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+.candles-container {
+  position: absolute;
+  top: 45px;
+  width: 140px;
+  display: flex;
+  justify-content: space-around;
+  padding: 0;
+  z-index: 2;
+}
+
+.candle {
+  width: 10px;
+  height: 40px;
+  background: linear-gradient(to bottom, #ffd700, #ffa500);
+  border-radius: 5px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.candle.on:hover {
+  transform: scale(1.1);
+}
+
+.candle.off {
+  background: #555;
+  cursor: default;
+}
+
+.flame {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 20px;
+  background: radial-gradient(circle at 50% 100%, #ff4500, #ffff00 70%);
+  border-radius: 50% 50% 20% 20%;
+  animation: flicker 0.1s infinite alternate;
+  box-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+}
+
+@keyframes flicker {
+  from { transform: translateX(-50%) scale(1); }
+  to { transform: translateX(-50%) scale(1.1) rotate(2deg); }
+}
+
+.surprise-hint {
+  font-size: 24px;
+  font-weight: bold;
+  animation: pulseHint 1.5s infinite;
+  color: #ffcc00;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+@keyframes pulseHint {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* Message Styles */
+.message-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: slideUpMessage 0.8s ease-out forwards;
+}
+
+@keyframes slideUpMessage {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.message-title {
+  font-size: 32px;
+  color: #ffcc00;
+  margin-bottom: 10px;
+}
+
+.message-body {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message-footer {
+  font-size: 22px;
+  margin-top: 10px;
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+.btn--exit {
+  margin-top: 30px;
+  background: #ffcc00;
+  color: #1a1a2e;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--exit:hover {
+  background: #ffdb4d;
+  transform: scale(1.05);
+}
+
+.fade-in {
+  animation: fadeInSurprise 1s ease-out forwards;
+}

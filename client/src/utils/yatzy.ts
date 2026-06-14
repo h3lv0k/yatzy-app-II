@@ -10,6 +10,11 @@ function sumDice(dice: number[]): number {
   return dice.reduce((a, b) => a + b, 0);
 }
 
+export function isYatzyRoll(dice: number[]): boolean {
+  if (dice.length === 0) return false;
+  return dice.every(d => d === dice[0]);
+}
+
 export function calculateScore(category: ScoreCategory, dice: number[]): number {
   const counts = countFaces(dice);
   const vals = Object.values(counts);

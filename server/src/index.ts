@@ -289,12 +289,18 @@ io.on('connection', (socket: Socket) => {
     const isYatzyRoll = calculateScore('yatzy', gameState.dice) === 50;
     const hasYatzyBonus = isYatzyRoll && currentPlayer.scores.yatzy === 50;
 
+    // Bonus is only for matching Upper category or sum-based Lower categories
+    const isMatchingUpper = UPPER_CATEGORIES.includes(category) && calculateScore(category, gameState.dice) > 0;
+    const isSumBasedLower = ['threeOfAKind', 'fourOfAKind', 'chance'].includes(category);
+    const isEligibleForBonus = isSumBasedLower || isMatchingUpper;
+    const apply100Bonus = hasYatzyBonus && isEligibleForBonus;
+
     const isLSC = LOWER_CATEGORIES.includes(category) && category !== 'chance';
 
-    if (isLSC && (score > 0 || hasYatzyBonus)) {
+    if (isLSC && (score > 0 || apply100Bonus)) {
       // If it's a Yatzy Bonus, the base score is 100 and multiplier is NOT applied (x1.0)
       // Otherwise, use calculated score and current multiplier
-      const finalScore = hasYatzyBonus ? 100 : Math.floor(score * currentPlayer.lscMultiplier);
+      const finalScore = apply100Bonus ? 100 : Math.floor(score * currentPlayer.lscMultiplier);
       currentPlayer.scores[category] = finalScore;
 
       // Increment streak and update multiplier for NEXT turn
@@ -302,8 +308,8 @@ io.on('connection', (socket: Socket) => {
       currentPlayer.lscMultiplier = Math.min(2.0, 1 + (currentPlayer.lscStreak * 0.2));
     } else {
       // UPPER section, Chance, or zero score in LOWER section
-      // Yatzy Bonus in Upper section is just 100
-      currentPlayer.scores[category] = hasYatzyBonus ? 100 : score;
+      // Yatzy Bonus (matching Upper or Chance) is 100
+      currentPlayer.scores[category] = apply100Bonus ? 100 : score;
 
       // Reset streak and multiplier
       currentPlayer.lscStreak = 0;

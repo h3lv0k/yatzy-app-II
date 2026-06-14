@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState, Player, ScoreCategory, ScoreSheet, UPPER_CATEGORIES, LOWER_CATEGORIES } from '../types/game';
-import { calculateScore, computeUpperTotal } from '../utils/yatzy';
+import { calculateScore, computeUpperTotal, isYatzyRoll } from '../utils/yatzy';
 import { chooseDiceToKeep, chooseBestCategory } from '../bot/botStrategy';
 
 // ────────────────────────────────────────────────
@@ -340,18 +340,24 @@ function applyScore(
   let score = calculateScore(category, state.dice);
 
   // Yatzy Bonus: if player rolls a Yatzy and already has 50 in Yatzy category
-  const isYatzyRoll = calculateScore('yatzy', state.dice) === 50;
-  const hasYatzyBonus = isYatzyRoll && player.scores.yatzy === 50;
+  const isYatzyRollCurrent = isYatzyRoll(state.dice);
+  const hasYatzyBonus = isYatzyRollCurrent && player.scores.yatzy === 50;
+
+  // Bonus is only for matching Upper category or sum-based Lower categories
+  const isMatchingUpper = UPPER_CATEGORIES.includes(category) && calculateScore(category, state.dice) > 0;
+  const isSumBasedLower = ['threeOfAKind', 'fourOfAKind', 'chance'].includes(category);
+  const isEligibleForBonus = isSumBasedLower || isMatchingUpper;
+  const apply100Bonus = hasYatzyBonus && isEligibleForBonus;
 
   const isLSC = LOWER_CATEGORIES.includes(category) && category !== 'chance';
 
-  if (isLSC && (score > 0 || hasYatzyBonus)) {
-    const finalScore = hasYatzyBonus ? 100 : Math.floor(score * player.lscMultiplier);
+  if (isLSC && (score > 0 || apply100Bonus)) {
+    const finalScore = apply100Bonus ? 100 : Math.floor(score * player.lscMultiplier);
     player.scores[category] = finalScore;
     player.lscStreak += 1;
     player.lscMultiplier = Math.min(2.0, 1 + (player.lscStreak * 0.2));
   } else {
-    player.scores[category] = hasYatzyBonus ? 100 : score;
+    player.scores[category] = apply100Bonus ? 100 : score;
     player.lscStreak = 0;
     player.lscMultiplier = 1.0;
   }

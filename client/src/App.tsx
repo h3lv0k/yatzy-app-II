@@ -5,6 +5,7 @@ import { useTelegram } from './hooks/useTelegram';
 import { Lobby } from './components/Lobby';
 import { GameBoard } from './components/GameBoard';
 import { GameOver } from './components/GameOver';
+import { SurpriseRoom } from './components/SurpriseRoom';
 import { ScoreCategory } from './types/game';
 import './App.css';
 
@@ -16,6 +17,7 @@ function App() {
   const [botPlayerName, setBotPlayerName] = useState('');
   const [botPlayerAvatar, setBotPlayerAvatar] = useState('😀');
   const [isDebugMode, setIsDebugMode] = useState(false);
+  const [isSurpriseMode, setIsSurpriseMode] = useState(false);
 
   const {
     localState, start: startBotGame, rollDice: botRoll, toggleHold: botToggleHold,
@@ -80,6 +82,19 @@ function App() {
     setBotPlayerName('');
     botLeave();
   };
+
+  const handleEnterSurprise = () => {
+    setIsSurpriseMode(true);
+  };
+
+  const handleLeaveSurprise = () => {
+    setIsSurpriseMode(false);
+  };
+
+  // ── Routing: SURPRISE MODE ───────────────────────────────────────────────
+  if (isSurpriseMode) {
+    return <SurpriseRoom onLeave={handleLeaveSurprise} />;
+  }
 
   // ── Routing: BOT MODE ────────────────────────────────────────────────────
   if (isBotMode) {
@@ -173,6 +188,7 @@ function App() {
       onCreateRoom={createRoom}
       onJoinRoom={joinRoom}
       onPlayVsBot={handlePlayVsBot}
+      onEnterSurprise={handleEnterSurprise}
       roomCode={roomCode}
       error={error}
       connected={connected}
@@ -181,4 +197,3 @@ function App() {
 }
 
 export default App;
-

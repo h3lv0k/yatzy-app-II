@@ -34,13 +34,14 @@ interface Props {
   onCreateRoom: (name: string, avatar: string) => void;
   onJoinRoom: (code: string, name: string, avatar: string) => void;
   onPlayVsBot: (name: string, avatar: string, debug?: boolean) => void;
+  onEnterSurprise: () => void;
   roomCode: string | null;
   error: string | null;
   connected: boolean;
 }
 
 export const Lobby: React.FC<Props> = ({
-  defaultName, onCreateRoom, onJoinRoom, onPlayVsBot, roomCode, error, connected,
+  defaultName, onCreateRoom, onJoinRoom, onPlayVsBot, onEnterSurprise, roomCode, error, connected,
 }) => {
   const [name, setName] = useState(defaultName);
   const [joinCode, setJoinCode] = useState('');
@@ -82,6 +83,12 @@ export const Lobby: React.FC<Props> = ({
     if (code === 'DEBUG') {
       setLocalError(null);
       onPlayVsBot(name.trim(), avatar, true);
+      return;
+    }
+    
+    if (code === 'SONYA') {
+      setLocalError(null);
+      onEnterSurprise();
       return;
     }
 
