@@ -195,5 +195,30 @@ export function useSocket() {
     socketRef.current?.emit('surrender');
   }, []);
 
-  return { state, createRoom, joinRoom, rollDice, toggleHold, scoreCategory, rematch, surrender, leaveRoom };
+  const sendReaction = useCallback((emoji: string) => {
+    socketRef.current?.emit('send_reaction', { emoji });
+  }, []);
+
+  const onReaction = useCallback((cb: (data: { senderId: string; emoji: string }) => void) => {
+    const s = socketRef.current;
+    if (!s) return () => {};
+    s.on('receive_reaction', cb);
+    return () => {
+      s.off('receive_reaction', cb);
+    };
+  }, []);
+
+  return {
+    state,
+    createRoom,
+    joinRoom,
+    rollDice,
+    toggleHold,
+    scoreCategory,
+    rematch,
+    surrender,
+    leaveRoom,
+    sendReaction,
+    onReaction,
+  };
 }

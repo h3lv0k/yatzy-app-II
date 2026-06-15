@@ -26,6 +26,8 @@ const rooms = new Map<string, Room>();
 const socketRoom = new Map<string, string>();
 // socketId -> last roll timestamp (rate limiting)
 const lastRoll = new Map<string, number>();
+// socketId -> last reaction timestamp (rate limiting)
+const lastReaction = new Map<string, number>();
 
 // Cleanup stale empty rooms every 10 minutes
 setInterval(() => {
@@ -423,11 +425,33 @@ io.on('connection', (socket: Socket) => {
     io.to(code).emit('game_state', gameState);
   }));
 
+  // Send reaction
+  socket.on('send_reaction', ({ emoji }: { emoji: string }) => safeHandler('send_reaction', () => {
+    const code = socketRoom.get(socket.id);
+    if (!code) return;
+    const room = rooms.get(code);
+    if (!room) return;
+
+    // Validate emoji
+    const allowed = ['👍', '🔥', '🎉', '💩', '😎', '😢', '😘', '🖤', '💅', '🥂', '😈'];
+    if (!allowed.includes(emoji)) return;
+
+    // Rate limiting: 2.5s
+    const now = Date.now();
+    const last = lastReaction.get(socket.id) ?? 0;
+    if (now - last < 2500) return;
+    lastReaction.set(socket.id, now);
+
+    // Broadcast to opponent
+    socket.to(code).emit('receive_reaction', { senderId: socket.id, emoji });
+  }));
+
   // Disconnect
   socket.on('disconnect', () => {
     const code = socketRoom.get(socket.id);
     socketRoom.delete(socket.id);
     lastRoll.delete(socket.id);
+    lastReaction.delete(socket.id);
     if (!code) return;
     const room = rooms.get(code);
     if (!room) return;

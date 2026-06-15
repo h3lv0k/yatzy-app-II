@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState, ScoreCategory } from '../types/game';
 import { Die } from './Die';
 import { ScoreCard } from './ScoreCard';
 import { YatzyOverlay } from './YatzyOverlay';
 import { DebugPanel } from './DebugPanel';
 import { isYatzyRoll } from '../utils/yatzy';
+import { useTelegram } from '../hooks/useTelegram';
 import './GameBoard.css';
 
 interface Props {
@@ -31,6 +32,8 @@ interface Props {
   historyCount?: number;
   lscMultiplier?: number;
   lscStreak?: number;
+  sendReaction?: (emoji: string) => void;
+  onReaction?: (cb: (data: { senderId: string; emoji: string }) => void) => () => void;
 }
 
 export const GameBoard: React.FC<Props> = ({
@@ -38,7 +41,8 @@ export const GameBoard: React.FC<Props> = ({
   isBotGame = false, adBonusAvailable = false, onWatchAd,
   isDebugMode = false, debugUndo, debugSetDice, debugForceFinish, 
   debugSetUpperScore, debugFillScores,
-  historyCount = 0, lscMultiplier = 1, lscStreak = 0
+  historyCount = 0, lscMultiplier = 1, lscStreak = 0,
+  sendReaction, onReaction
 }) => {
   const [confirmSurrender, setConfirmSurrender] = useState(false);
 
@@ -46,6 +50,8 @@ export const GameBoard: React.FC<Props> = ({
   const handleSurrenderConfirm = () => { setConfirmSurrender(false); onSurrender(); };
   const handleSurrenderCancel = () => setConfirmSurrender(false);
   const { players, currentPlayerIndex, dice, heldDice, rollsLeft, phase } = gameState;
+  const me = players.find((p) => p.id === myId);
+  const opponent = players.find((p) => p.id !== myId);
   const currentPlayer = players[currentPlayerIndex];
   const isMyTurn = currentPlayer?.id === myId;
   const [rolling, setRolling] = useState(false);
@@ -88,8 +94,143 @@ export const GameBoard: React.FC<Props> = ({
   // Cleanup timeout on unmount
   useEffect(() => () => { if (rollTimeoutRef.current) clearTimeout(rollTimeoutRef.current); }, []);
 
-  const me = players.find((p) => p.id === myId);
-  const opponent = players.find((p) => p.id !== myId);
+  // ── Reactions State & Logic ──────────────────
+  const { haptic } = useTelegram();
+  const [reactionTrayOpen, setReactionTrayOpen] = useState(false);
+  const [activeReactions, setActiveReactions] = useState<Array<{
+    id: string;
+    emoji: string;
+    senderId: string;
+    avatar: string;
+    offsetX: number;
+    offsetY: number;
+  }>>([]);
+  const trayRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const triggerReactionAnim = useCallback((emoji: string, senderId: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    
+    // Find sender avatar
+    const sender = players.find((p) => p.id === senderId);
+    const avatar = sender?.avatar ?? '👤';
+
+    // Random offset around the center (-25px to +25px)
+    const offsetX = (Math.random() - 0.5) * 50;
+    const offsetY = (Math.random() - 0.5) * 50;
+
+    setActiveReactions((prev) => [...prev, { id, emoji, senderId, avatar, offsetX, offsetY }]);
+
+    if (senderId !== myId) {
+      haptic?.impactOccurred('light');
+    }
+
+    setTimeout(() => {
+      setActiveReactions((prev) => prev.filter((r) => r.id !== id));
+    }, 1800);
+  }, [players, myId, haptic]);
+
+  const handleSendReaction = (emoji: string) => {
+    haptic?.impactOccurred('medium');
+    triggerReactionAnim(emoji, myId);
+
+    if (isBotGame) {
+      // Simulate bot reaction
+      setTimeout(() => {
+        if (Math.random() < 0.7) {
+          const responses: Record<string, string[]> = {
+            '👍': ['👍', '😎', '🎉'],
+            '🔥': ['🔥', '😎', '🎉'],
+            '🎉': ['🎉', '😎', '👍'],
+            '💩': ['😎', '😢', '👍'],
+            '😎': ['😎', '👍', '🔥'],
+            '😢': ['😢', '👍', '😎'],
+            '😘': ['😘', '🖤', '🥂'],
+            '🖤': ['🖤', '😘', '👍'],
+            '💅': ['💅', '😎', '🖤'],
+            '🥂': ['🥂', '🎉', '😎'],
+            '😈': ['😈', '😎', '🔥'],
+          };
+          const list = responses[emoji] || ['👍'];
+          const botEmoji = list[Math.floor(Math.random() * list.length)];
+          triggerReactionAnim(botEmoji, 'bot');
+        }
+      }, 800 + Math.random() * 700);
+    } else {
+      sendReaction?.(emoji);
+    }
+    setReactionTrayOpen(false);
+  };
+
+  // Close reaction tray on click outside
+  useEffect(() => {
+    if (!reactionTrayOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        trayRef.current && 
+        !trayRef.current.contains(e.target as Node) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target as Node)
+      ) {
+        setReactionTrayOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [reactionTrayOpen]);
+
+  // Listen for socket reactions
+  useEffect(() => {
+    if (!onReaction || isBotGame) return;
+    const unsubscribe = onReaction(({ senderId, emoji }) => {
+      triggerReactionAnim(emoji, senderId);
+    });
+    return () => unsubscribe();
+  }, [onReaction, isBotGame, triggerReactionAnim]);
+
+  // Auto-reactions from Bot (when Bot rolls Yatzy)
+  const lastDiceStrRef = useRef('');
+  useEffect(() => {
+    if (!isBotGame) return;
+    const isBotTurn = currentPlayer?.id === 'bot';
+    if (!isBotTurn) return;
+
+    const diceStr = dice.join(',');
+    if (diceStr !== lastDiceStrRef.current) {
+      lastDiceStrRef.current = diceStr;
+      if (isYatzyRoll(dice) && rollsLeft < 3) {
+        setTimeout(() => {
+          triggerReactionAnim(Math.random() > 0.5 ? '🔥' : '😎', 'bot');
+        }, 600);
+      }
+    }
+  }, [dice, isBotGame, currentPlayer, rollsLeft, triggerReactionAnim]);
+
+  // Auto-reactions from Bot (when Bot scores 0 or high values)
+  const lastBotScoresRef = useRef<Record<string, number | undefined>>({});
+  useEffect(() => {
+    if (!isBotGame || !opponent) return;
+    const currentScores = opponent.scores;
+    const lastScores = lastBotScoresRef.current;
+
+    const newCat = Object.keys(currentScores).find(
+      (cat) => currentScores[cat as ScoreCategory] !== undefined && lastScores[cat] === undefined
+    ) as ScoreCategory | undefined;
+
+    if (newCat) {
+      const scoredValue = currentScores[newCat];
+      if (scoredValue === 0) {
+        setTimeout(() => {
+          triggerReactionAnim('😢', 'bot');
+        }, 800);
+      } else if (scoredValue !== undefined && scoredValue >= 40) {
+        setTimeout(() => {
+          triggerReactionAnim('😎', 'bot');
+        }, 800);
+      }
+    }
+    lastBotScoresRef.current = { ...currentScores };
+  }, [opponent?.scores, isBotGame, opponent, triggerReactionAnim]);
 
   const canRoll = isMyTurn && rollsLeft > 0 && phase === 'rolling' && !waitingForRoll;
 
@@ -110,6 +251,24 @@ export const GameBoard: React.FC<Props> = ({
   return (
     <div className="board">
       <YatzyOverlay show={isYatzy} />
+
+      {/* Floating Reactions overlay */}
+      <div className="reactions-container">
+        {activeReactions.map((r) => (
+          <div
+            key={r.id}
+            className="floating-reaction"
+            style={{
+              left: `calc(50% + ${r.offsetX}px)`,
+              top: `calc(50% + ${r.offsetY}px)`,
+            } as React.CSSProperties}
+          >
+            <span className="floating-reaction-emoji">{r.emoji}</span>
+            <span className="floating-reaction-avatar">{r.avatar}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Header */}
       <div className="board-header">
         <div className={`turn-indicator ${isMyTurn ? 'turn-indicator--mine' : 'turn-indicator--theirs'}`}>
@@ -202,6 +361,31 @@ export const GameBoard: React.FC<Props> = ({
           lscMultiplier={lscMultiplier}
           lscStreak={lscStreak}
         />
+      )}
+
+      {/* Floating Reaction Trigger Button */}
+      <button 
+        ref={btnRef}
+        className={`reaction-trigger-btn ${reactionTrayOpen ? 'reaction-trigger-btn--active' : ''}`}
+        onClick={() => setReactionTrayOpen(v => !v)}
+        title="Отправить реакцию"
+      >
+        💬
+      </button>
+
+      {/* Floating Reaction Tray */}
+      {reactionTrayOpen && (
+        <div className="reaction-tray" ref={trayRef}>
+          {['👍', '🔥', '🎉', '💩', '😎', '😢', '😘', '🖤', '💅', '🥂', '😈'].map((em) => (
+            <button
+              key={em}
+              className="reaction-option"
+              onClick={() => handleSendReaction(em)}
+            >
+              {em}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

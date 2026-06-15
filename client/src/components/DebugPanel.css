@@ -1,7 +1,7 @@
 .debug-toggle {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   background: #333;
   color: white;
   border: none;
@@ -19,7 +19,7 @@
 .debug-panel {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   width: 280px;
   background: #222;
   color: #eee;

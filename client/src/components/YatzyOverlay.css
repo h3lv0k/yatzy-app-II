@@ -10,6 +10,12 @@
   justify-content: center;
   pointer-events: none;
   overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.4s ease-out;
+}
+
+.yatzy-overlay--fade-out {
+  opacity: 0;
 }
 
 .yatzy-text {

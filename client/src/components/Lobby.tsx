@@ -86,11 +86,13 @@ export const Lobby: React.FC<Props> = ({
       return;
     }
     
+    /* Deactivated SONYA room trigger for now
     if (code === 'SONYA') {
       setLocalError(null);
       onEnterSurprise();
       return;
     }
+    */
 
     if (code.length !== 5) { setLocalError('Код комнаты должен содержать 5 символов'); return; }
     if (!/^[A-Z0-9]+$/.test(code)) { setLocalError('Недопустимые символы в коде'); return; }

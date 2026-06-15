@@ -10,7 +10,7 @@ import { ScoreCategory } from './types/game';
 import './App.css';
 
 function App() {
-  const { state, createRoom, joinRoom, rollDice, toggleHold, scoreCategory, rematch, surrender, leaveRoom } = useSocket();
+  const { state, createRoom, joinRoom, rollDice, toggleHold, scoreCategory, rematch, surrender, leaveRoom, sendReaction, onReaction } = useSocket();
   const { defaultName, haptic } = useTelegram();
 
   // ── Bot game state ──────────────────────────────────────────────────────
@@ -178,6 +178,8 @@ function App() {
         onLeave={leaveRoom}
         error={error}
         opponentDisconnected={opponentDisconnected}
+        sendReaction={sendReaction}
+        onReaction={onReaction}
       />
     );
   }
