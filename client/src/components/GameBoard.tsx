@@ -97,6 +97,7 @@ export const GameBoard: React.FC<Props> = ({
   // ── Reactions State & Logic ──────────────────
   const { haptic } = useTelegram();
   const [reactionTrayOpen, setReactionTrayOpen] = useState(false);
+  const [reactionTab, setReactionTab] = useState<'emoji' | 'phrases'>('emoji');
   const [activeReactions, setActiveReactions] = useState<Array<{
     id: string;
     emoji: string;
@@ -150,6 +151,12 @@ export const GameBoard: React.FC<Props> = ({
             '💅': ['💅', '😎', '🖤'],
             '🥂': ['🥂', '🎉', '😎'],
             '😈': ['😈', '😎', '🔥'],
+            '🫦': ['🫦', '😘', '🖤', '😈'],
+            '🖕': ['🖕', '😈', '💩', '😢'],
+            '💥': ['💥', '🔥', '😎'],
+            'Сосать': ['😢', '💩', '🖕', 'иди нахуй'],
+            'иди нахуй': ['😈', '🖕', 'Сосать'],
+            'Королева': ['👑', '😘', '🖤'],
           };
           const list = responses[emoji] || ['👍'];
           const botEmoji = list[Math.floor(Math.random() * list.length)];
@@ -254,19 +261,60 @@ export const GameBoard: React.FC<Props> = ({
 
       {/* Floating Reactions overlay */}
       <div className="reactions-container">
-        {activeReactions.map((r) => (
-          <div
-            key={r.id}
-            className="floating-reaction"
-            style={{
-              left: `calc(50% + ${r.offsetX}px)`,
-              top: `calc(50% + ${r.offsetY}px)`,
-            } as React.CSSProperties}
-          >
-            <span className="floating-reaction-emoji">{r.emoji}</span>
-            <span className="floating-reaction-avatar">{r.avatar}</span>
-          </div>
-        ))}
+        {activeReactions.map((r) => {
+          const isPhrase = ['Сосать', 'иди нахуй', 'Королева'].includes(r.emoji);
+          if (isPhrase) {
+            let phraseClass = '';
+            let extraEmojis: string[] = [];
+            if (r.emoji === 'Сосать') {
+              phraseClass = 'phrase-suck';
+              extraEmojis = ['😈', '🍓', '🔞', '🫦'];
+            } else if (r.emoji === 'иди нахуй') {
+              phraseClass = 'phrase-fucking-go';
+              extraEmojis = ['🖕', '🖕', '🖕'];
+            } else if (r.emoji === 'Королева') {
+              phraseClass = 'phrase-queen';
+              extraEmojis = ['👑', '💎', '✨'];
+            }
+
+            return (
+              <div
+                key={r.id}
+                className={`floating-phrase ${phraseClass}`}
+                style={{
+                  left: `calc(50% + ${r.offsetX}px)`,
+                  top: `calc(50% + ${r.offsetY}px)`,
+                } as React.CSSProperties}
+              >
+                <div className="phrase-text-wrapper">
+                  <span className="phrase-text">{r.emoji}</span>
+                  <span className="phrase-avatar">{r.avatar}</span>
+                </div>
+                <div className="surrounding-emojis">
+                  {extraEmojis.map((em, idx) => (
+                    <span key={idx} className={`surrounding-emoji emoji-${idx}`}>
+                      {em}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={r.id}
+              className="floating-reaction"
+              style={{
+                left: `calc(50% + ${r.offsetX}px)`,
+                top: `calc(50% + ${r.offsetY}px)`,
+              } as React.CSSProperties}
+            >
+              <span className="floating-reaction-emoji">{r.emoji}</span>
+              <span className="floating-reaction-avatar">{r.avatar}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Header */}
@@ -376,15 +424,43 @@ export const GameBoard: React.FC<Props> = ({
       {/* Floating Reaction Tray */}
       {reactionTrayOpen && (
         <div className="reaction-tray" ref={trayRef}>
-          {['👍', '🔥', '🎉', '💩', '😎', '😢', '😘', '🖤', '💅', '🥂', '😈'].map((em) => (
-            <button
-              key={em}
-              className="reaction-option"
-              onClick={() => handleSendReaction(em)}
+          <div className="reaction-tabs">
+            <button 
+              className={`reaction-tab-btn ${reactionTab === 'emoji' ? 'reaction-tab-btn--active' : ''}`}
+              onClick={() => setReactionTab('emoji')}
             >
-              {em}
+              😀
             </button>
-          ))}
+            <button 
+              className={`reaction-tab-btn ${reactionTab === 'phrases' ? 'reaction-tab-btn--active' : ''}`}
+              onClick={() => setReactionTab('phrases')}
+            >
+              💬
+            </button>
+          </div>
+          <div className="reaction-options-grid">
+            {reactionTab === 'emoji' ? (
+              ['👍', '🔥', '🎉', '💩', '😎', '😢', '😘', '🖤', '💅', '🥂', '😈', '🫦', '🖕', '💥'].map((em) => (
+                <button
+                  key={em}
+                  className="reaction-option"
+                  onClick={() => handleSendReaction(em)}
+                >
+                  {em}
+                </button>
+              ))
+            ) : (
+              ['Сосать', 'иди нахуй', 'Королева'].map((ph) => (
+                <button
+                  key={ph}
+                  className="reaction-option phrase-option"
+                  onClick={() => handleSendReaction(ph)}
+                >
+                  {ph}
+                </button>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

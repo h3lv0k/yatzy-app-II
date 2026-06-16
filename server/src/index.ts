@@ -433,7 +433,7 @@ io.on('connection', (socket: Socket) => {
     if (!room) return;
 
     // Validate emoji
-    const allowed = ['👍', '🔥', '🎉', '💩', '😎', '😢', '😘', '🖤', '💅', '🥂', '😈'];
+    const allowed = ['👍', '🔥', '🎉', '💩', '😎', '😢', '😘', '🖤', '💅', '🥂', '😈', '🫦', '🖕', '💥', 'Сосать', 'иди нахуй', 'Королева'];
     if (!allowed.includes(emoji)) return;
 
     // Rate limiting: 2.5s
