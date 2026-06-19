@@ -47,7 +47,7 @@ const getLowRiderProgress = (player: Player): { label: string; score: number } =
   
   if (hasOnes && hasTwos && hasThrees) {
     const sum = (player.scores.ones ?? 0) + (player.scores.twos ?? 0) + (player.scores.threes ?? 0);
-    return sum >= 10 ? { label: '12', score: 12 } : { label: '✕', score: 0 };
+    return sum >= 13 ? { label: '12', score: 12 } : { label: '✕', score: 0 };
   }
   return { label: count > 0 ? `${count}/3` : '—', score: 0 };
 };
@@ -187,7 +187,7 @@ export const ScoreCard: React.FC<Props> = ({
             })}
           </tr>
           <tr>
-            <td className="cat-label cat-label--combo" title="Сумма Единиц, Двоек и Троек должна быть >= 10">
+            <td className="cat-label cat-label--combo" title="Сумма Единиц, Двоек и Троек должна быть >= 13">
               🧸 Детский сад (+12)
             </td>
             {players.map((p) => {

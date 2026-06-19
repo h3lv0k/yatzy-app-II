@@ -85,7 +85,7 @@ export function getLowRiderComboScore(scores: ScoreSheet): number {
   const hasThrees = scores.threes !== undefined;
   if (hasOnes && hasTwos && hasThrees) {
     const sum = (scores.ones ?? 0) + (scores.twos ?? 0) + (scores.threes ?? 0);
-    return sum >= 10 ? 12 : 0;
+    return sum >= 13 ? 12 : 0;
   }
   return 0;
 }
