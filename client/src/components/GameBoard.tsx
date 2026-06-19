@@ -30,8 +30,6 @@ interface Props {
   debugSetUpperScore?: (score: number) => void;
   debugFillScores?: () => void;
   historyCount?: number;
-  lscMultiplier?: number;
-  lscStreak?: number;
   sendReaction?: (emoji: string) => void;
   onReaction?: (cb: (data: { senderId: string; emoji: string }) => void) => () => void;
 }
@@ -41,7 +39,7 @@ export const GameBoard: React.FC<Props> = ({
   isBotGame = false, adBonusAvailable = false, onWatchAd,
   isDebugMode = false, debugUndo, debugSetDice, debugForceFinish, 
   debugSetUpperScore, debugFillScores,
-  historyCount = 0, lscMultiplier = 1, lscStreak = 0,
+  historyCount = 0,
   sendReaction, onReaction
 }) => {
   const [confirmSurrender, setConfirmSurrender] = useState(false);
@@ -56,8 +54,45 @@ export const GameBoard: React.FC<Props> = ({
   const isMyTurn = currentPlayer?.id === myId;
   const [rolling, setRolling] = useState(false);
   
+  // State to track players who have already triggered the Yatzy effect
+  const [triggeredYatzyPlayers, setTriggeredYatzyPlayers] = useState<string[]>([]);
+  const lastTurnYatzyRef = useRef<Record<string, boolean>>({});
+
   // Detect if current dice is a Yatzy
-  const isYatzy = isYatzyRoll(dice) && rollsLeft < 3;
+  const isYatzyRollCurrent = isYatzyRoll(dice) && rollsLeft < 3;
+  const isYatzy = isYatzyRollCurrent && currentPlayer && !triggeredYatzyPlayers.includes(currentPlayer.id);
+
+  // Track when a Yatzy is rolled for the first time by a player (deferred update to turn transitions)
+  const prevTurnRef = useRef(gameState.turn);
+  const prevPlayerIdRef = useRef(currentPlayer?.id);
+
+  useEffect(() => {
+    if (gameState.turn === 0) {
+      setTriggeredYatzyPlayers([]);
+      lastTurnYatzyRef.current = {};
+    }
+
+    if (gameState.turn !== prevTurnRef.current || currentPlayer?.id !== prevPlayerIdRef.current) {
+      const prevPlayerId = prevPlayerIdRef.current;
+      if (prevPlayerId && lastTurnYatzyRef.current[prevPlayerId]) {
+        setTriggeredYatzyPlayers((prev) => {
+          if (!prev.includes(prevPlayerId)) {
+            return [...prev, prevPlayerId];
+          }
+          return prev;
+        });
+      }
+      if (currentPlayer?.id) {
+        lastTurnYatzyRef.current[currentPlayer.id] = false;
+      }
+      prevTurnRef.current = gameState.turn;
+      prevPlayerIdRef.current = currentPlayer?.id;
+    }
+
+    if (isYatzyRollCurrent && currentPlayer?.id) {
+      lastTurnYatzyRef.current[currentPlayer.id] = true;
+    }
+  }, [gameState.turn, currentPlayer?.id, isYatzyRollCurrent]);
 
   const [waitingForRoll, setWaitingForRoll] = useState(false);
   const [rollTrigger, setRollTrigger] = useState(0); // Counter to force animation
@@ -96,6 +131,13 @@ export const GameBoard: React.FC<Props> = ({
 
   // ── Reactions State & Logic ──────────────────
   const { haptic } = useTelegram();
+
+  // Celebrate with haptic feedback on Yatzy!
+  useEffect(() => {
+    if (isYatzy) {
+      haptic?.notificationOccurred('success');
+    }
+  }, [isYatzy, haptic]);
   const [reactionTrayOpen, setReactionTrayOpen] = useState(false);
   const [reactionTab, setReactionTab] = useState<'emoji' | 'phrases'>('emoji');
   const [activeReactions, setActiveReactions] = useState<Array<{
@@ -406,8 +448,6 @@ export const GameBoard: React.FC<Props> = ({
           onForceFinish={debugForceFinish}
           onSetUpperScore={debugSetUpperScore}
           onFillScores={debugFillScores}
-          lscMultiplier={lscMultiplier}
-          lscStreak={lscStreak}
         />
       )}
 

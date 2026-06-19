@@ -66,6 +66,30 @@ export function calculateScore(category: ScoreCategory, dice: number[]): number 
   }
 }
 
+export function getStraightComboScore(scores: ScoreSheet): number {
+  const hasSmall = scores.smallStraight !== undefined && scores.smallStraight > 0;
+  const hasLarge = scores.largeStraight !== undefined && scores.largeStraight > 0;
+  return hasSmall && hasLarge ? 20 : 0;
+}
+
+export function getKindComboScore(scores: ScoreSheet): number {
+  const hasThree = scores.threeOfAKind !== undefined && scores.threeOfAKind > 0;
+  const hasFour = scores.fourOfAKind !== undefined && scores.fourOfAKind > 0;
+  const hasFull = scores.fullHouse !== undefined && scores.fullHouse > 0;
+  return hasThree && hasFour && hasFull ? 25 : 0;
+}
+
+export function getLowRiderComboScore(scores: ScoreSheet): number {
+  const hasOnes = scores.ones !== undefined;
+  const hasTwos = scores.twos !== undefined;
+  const hasThrees = scores.threes !== undefined;
+  if (hasOnes && hasTwos && hasThrees) {
+    const sum = (scores.ones ?? 0) + (scores.twos ?? 0) + (scores.threes ?? 0);
+    return sum >= 10 ? 12 : 0;
+  }
+  return 0;
+}
+
 export function computeUpperTotal(scores: ScoreSheet): number {
   return (scores.ones ?? 0) + (scores.twos ?? 0) + (scores.threes ?? 0) +
          (scores.fours ?? 0) + (scores.fives ?? 0) + (scores.sixes ?? 0);
@@ -77,5 +101,6 @@ export function computeTotalScore(scores: ScoreSheet): number {
   const lower = (scores.threeOfAKind ?? 0) + (scores.fourOfAKind ?? 0) +
                 (scores.fullHouse ?? 0) + (scores.smallStraight ?? 0) +
                 (scores.largeStraight ?? 0) + (scores.yatzy ?? 0) + (scores.chance ?? 0);
-  return upperTotal + bonus + lower;
+  const combos = getStraightComboScore(scores) + getKindComboScore(scores) + getLowRiderComboScore(scores);
+  return upperTotal + bonus + lower + combos;
 }

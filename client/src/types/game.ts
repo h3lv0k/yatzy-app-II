@@ -51,8 +51,6 @@ export interface Player {
   scores: ScoreSheet;
   totalScore: number;
   upperBonus: boolean;
-  lscStreak: number;
-  lscMultiplier: number;
   connected?: boolean;
 }
 

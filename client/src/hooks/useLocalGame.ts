@@ -25,19 +25,43 @@ function rollDiceArr(dice: number[], held: boolean[]): number[] {
   return dice.map((d, i) => (held[i] ? d : rollDie()));
 }
 
+function getStraightComboScore(scores: ScoreSheet): number {
+  const hasSmall = scores.smallStraight !== undefined && scores.smallStraight > 0;
+  const hasLarge = scores.largeStraight !== undefined && scores.largeStraight > 0;
+  return hasSmall && hasLarge ? 20 : 0;
+}
+
+function getKindComboScore(scores: ScoreSheet): number {
+  const hasThree = scores.threeOfAKind !== undefined && scores.threeOfAKind > 0;
+  const hasFour = scores.fourOfAKind !== undefined && scores.fourOfAKind > 0;
+  const hasFull = scores.fullHouse !== undefined && scores.fullHouse > 0;
+  return hasThree && hasFour && hasFull ? 25 : 0;
+}
+
+function getLowRiderComboScore(scores: ScoreSheet): number {
+  const hasOnes = scores.ones !== undefined;
+  const hasTwos = scores.twos !== undefined;
+  const hasThrees = scores.threes !== undefined;
+  if (hasOnes && hasTwos && hasThrees) {
+    const sum = (scores.ones ?? 0) + (scores.twos ?? 0) + (scores.threes ?? 0);
+    return sum >= 10 ? 12 : 0;
+  }
+  return 0;
+}
+
 function computeTotal(scores: ScoreSheet): number {
   const upper = computeUpperTotal(scores);
   const bonus = upper >= 63 ? 35 : 0;
   const lower = (scores.threeOfAKind ?? 0) + (scores.fourOfAKind ?? 0) +
                 (scores.fullHouse ?? 0) + (scores.smallStraight ?? 0) +
                 (scores.largeStraight ?? 0) + (scores.yatzy ?? 0) + (scores.chance ?? 0);
-  return upper + bonus + lower;
+  const combos = getStraightComboScore(scores) + getKindComboScore(scores) + getLowRiderComboScore(scores);
+  return upper + bonus + lower + combos;
 }
 
 function makePlayer(id: string, name: string, avatar: string): Player {
   return {
     id, name, avatar, scores: {}, totalScore: 0, upperBonus: false,
-    lscStreak: 0, lscMultiplier: 1.0
   };
 }
 
@@ -129,7 +153,7 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
 
         if (state.phase === 'scoring') {
           // Bot picks the best category
-          const category = chooseBestCategory(state.dice, bot.scores, bot.lscMultiplier);
+          const category = chooseBestCategory(state.dice, bot.scores);
           return applyScore(state, bot.id, category, setGameOver);
         }
 
@@ -307,8 +331,6 @@ export function useLocalGame(playerName: string, playerAvatar: string) {
       gameOver, 
       adBonusAvailable, 
       historyCount: history.length,
-      lscMultiplier: currentPlayer?.lscMultiplier ?? 1,
-      lscStreak: currentPlayer?.lscStreak ?? 0
     },
     start,
     rollDice,
@@ -337,30 +359,8 @@ function applyScore(
   setGameOver: (go: LocalGameOver) => void,
 ): GameState {
   const player = state.players[state.currentPlayerIndex];
-  let score = calculateScore(category, state.dice);
-
-  // Yatzy Bonus: if player rolls a Yatzy and already has 50 in Yatzy category
-  const isYatzyRollCurrent = isYatzyRoll(state.dice);
-  const hasYatzyBonus = isYatzyRollCurrent && player.scores.yatzy === 50;
-
-  // Bonus is only for matching Upper category or sum-based Lower categories
-  const isMatchingUpper = UPPER_CATEGORIES.includes(category) && calculateScore(category, state.dice) > 0;
-  const isSumBasedLower = ['threeOfAKind', 'fourOfAKind', 'chance'].includes(category);
-  const isEligibleForBonus = isSumBasedLower || isMatchingUpper;
-  const apply100Bonus = hasYatzyBonus && isEligibleForBonus;
-
-  const isLSC = LOWER_CATEGORIES.includes(category) && category !== 'chance';
-
-  if (isLSC && (score > 0 || apply100Bonus)) {
-    const finalScore = apply100Bonus ? 100 : Math.floor(score * player.lscMultiplier);
-    player.scores[category] = finalScore;
-    player.lscStreak += 1;
-    player.lscMultiplier = Math.min(2.0, 1 + (player.lscStreak * 0.2));
-  } else {
-    player.scores[category] = apply100Bonus ? 100 : score;
-    player.lscStreak = 0;
-    player.lscMultiplier = 1.0;
-  }
+  const score = calculateScore(category, state.dice);
+  player.scores[category] = score;
 
   player.totalScore = computeTotal(player.scores);
   player.upperBonus = computeUpperTotal(player.scores) >= 63;

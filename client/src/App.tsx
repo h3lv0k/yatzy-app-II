@@ -98,7 +98,7 @@ function App() {
 
   // ── Routing: BOT MODE ────────────────────────────────────────────────────
   if (isBotMode) {
-    const { gameState: botGs, gameOver: botGo, adBonusAvailable, historyCount, lscMultiplier, lscStreak } = localState;
+    const { gameState: botGs, gameOver: botGo, adBonusAvailable, historyCount } = localState;
 
     if (botGo && botGs) {
       return (
@@ -137,8 +137,6 @@ function App() {
           debugSetUpperScore={debugSetUpperScore}
           debugFillScores={debugFillScores}
           historyCount={historyCount}
-          lscMultiplier={lscMultiplier}
-          lscStreak={lscStreak}
         />
       );
     }

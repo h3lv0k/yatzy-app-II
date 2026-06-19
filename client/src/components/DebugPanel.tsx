@@ -9,13 +9,11 @@ interface Props {
   onForceFinish: (win: boolean) => void;
   onSetUpperScore?: (score: number) => void;
   onFillScores?: () => void;
-  lscMultiplier?: number;
-  lscStreak?: number;
 }
 
 export const DebugPanel: React.FC<Props> = ({ 
   dice, historyCount, onSetDice, onUndo, onForceFinish,
-  onSetUpperScore, onFillScores, lscMultiplier, lscStreak
+  onSetUpperScore, onFillScores
 }) => {
   const [customDice, setCustomDice] = useState<number[]>([...dice]);
   const [isOpen, setIsOpen] = useState(false);
@@ -47,11 +45,7 @@ export const DebugPanel: React.FC<Props> = ({
         <button className="debug-close" onClick={() => setIsOpen(false)}>×</button>
       </div>
       
-      {lscMultiplier !== undefined && (
-        <div className="debug-info">
-          LSC: x{lscMultiplier.toFixed(1)} (Streak: {lscStreak})
-        </div>
-      )}
+
 
       <div className="debug-section">
         <label>Set Dice Combinations:</label>

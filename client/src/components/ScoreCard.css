@@ -174,3 +174,12 @@
 .cell--total {
   font-size: 16px;
 }
+
+.cat-label--combo {
+  text-align: left !important;
+  font-size: 11px;
+  padding-left: 8px !important;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
